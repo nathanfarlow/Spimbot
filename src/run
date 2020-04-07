@@ -1,0 +1,1 @@
+QtSpimbot -part1 -randommap -file ../part1.s $CSPIM/lib/libc/libc.s

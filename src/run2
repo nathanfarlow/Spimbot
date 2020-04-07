@@ -1,0 +1,1 @@
+QtSpimbot -part2 -file ../part2.s $CSPIM/lib/libc/libc.s -file2 ../adversary.s
