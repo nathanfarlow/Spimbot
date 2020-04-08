@@ -3,7 +3,7 @@
 constexpr unsigned kMaxGridSize = 16;
 
 struct Solution {
-    //???
+    //What is the format for this result?
     unsigned char data[256]{};
 };
 

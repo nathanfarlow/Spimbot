@@ -7,11 +7,11 @@ void Spimbot::set_angle(int32_t angle, Orientation orientation) {
     else
         angle_ = angle;
 
-    *(ANGLE) = angle;
-    *(ANGLE_CONTROL) = orientation;
+    *ANGLE = angle;
+    *ANGLE_CONTROL = orientation;
 }
 
 void Spimbot::set_velocity(int32_t velocity) {
     velocity_ = velocity;
-    *(VELOCITY) = velocity;
+    *VELOCITY = velocity;
 }

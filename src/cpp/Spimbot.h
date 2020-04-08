@@ -33,13 +33,13 @@ public:
     bool IsRespawn()            {return has_respawn_interrupt;}
     void ClearRespawn()         {has_respawn_interrupt = false;}
 
-    void UpdateMap()            {*(ARENA_MAP) = (uint32_t)&map_;}
-    void UpdateOpponentHint()   {*(GET_OPPONENT_HINT) = (uint32_t)&opponent_hint_;}
-    void UpdateScannerInfo()    {*(USE_SCANNER) = (uint32_t)&scanner_info_;}
+    void UpdateMap()            {*ARENA_MAP = &map_;}
+    void UpdateOpponentHint()   {*GET_OPPONENT_HINT = &opponent_hint_;}
+    void UpdateScannerInfo()    {*USE_SCANNER = &scanner_info_;}
 
-    void Shoot()                {*(SHOOT_UDP_PACKET) = 0;}
+    void Shoot()                {*SHOOT_UDP_PACKET = 0;}
 
-    uint32_t get_bytecoins()    {return *(GET_BYTECOINS);}
+    uint32_t get_bytecoins()    {return *GET_BYTECOINS;}
 
     int32_t get_velocity()     {return velocity_;}
     void set_velocity(int32_t velocity);
