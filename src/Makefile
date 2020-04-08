@@ -1,11 +1,12 @@
 #This is the name of the final output file. It is the concatenation of all
 #compilation units and will be placed in the current directory.
-OUTFILE = ../part2.s
+OUTFILE = ../spimbot.s
 
 #Place all your source files here
 SRC = $(wildcard cpp/*.c) $(wildcard cpp/*.cpp) $(wildcard cpp/*/*.c) $(wildcard cpp/*/*.cpp) #$(wildcard src/*.m)
 
-ASM_INCLUDE = $(wildcard asm/*.s)
+#Make sure you build libc first.
+ASM_INCLUDE = $(wildcard asm/*.s) ${CSPIM}/lib/libc/libc.s
 
 #This folder consists of the individual compilation unit's .s file.
 OUTDIR = out

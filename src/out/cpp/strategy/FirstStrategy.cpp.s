@@ -6,9 +6,9 @@ _Z5sleepj:
 	addiu	$sp, $sp, -8
 	sw	$4, 4($sp)
 	sw	$zero, 0($sp)
-	j	$BB0_1_6568846072
+	j	$BB0_1_382009053
 	
-$BB0_1_6568846072:
+$BB0_1_382009053:
 	lw	$2, 0($sp)
 	lw	$3, 4($sp)
 	lui	$4, 52428
@@ -17,23 +17,23 @@ $BB0_1_6568846072:
 	mfhi	$3
 	srl	$3, $3, 2
 	sltu	$2, $2, $3
-	bnez	$2, $BB0_4_6568846072
+	bnez	$2, $BB0_4_382009053
 	
-	j	$BB0_3_6568846072
+	j	$BB0_3_382009053
 	
-$BB0_3_6568846072:
-	j	$BB0_6_6568846072
+$BB0_3_382009053:
+	j	$BB0_6_382009053
 	
-$BB0_4_6568846072:
-	j	$BB0_5_6568846072
+$BB0_4_382009053:
+	j	$BB0_5_382009053
 	
-$BB0_5_6568846072:
+$BB0_5_382009053:
 	lw	$2, 0($sp)
 	addiu	$2, $2, 1
 	sw	$2, 0($sp)
-	j	$BB0_1_6568846072
+	j	$BB0_1_382009053
 	
-$BB0_6_6568846072:
+$BB0_6_382009053:
 	addiu	$sp, $sp, 8
 	jr	$ra
 	
@@ -53,10 +53,10 @@ _ZN13FirstStrategy5moveXEi:
 	
 	addiu	$5, $zero, 0
 	slt	$2, $zero, $16
-	bnez	$2, $BB1_2_6568846072
+	bnez	$2, $BB1_2_382009053
 	
 	addiu	$5, $zero, 180
-$BB1_2_6568846072:
+$BB1_2_382009053:
 	lw	$4, 4($17)
 	addiu	$18, $zero, 1
 	addiu	$6, $zero, 1
@@ -93,10 +93,10 @@ _ZN13FirstStrategy5moveYEi:
 	
 	slt	$2, $zero, $16
 	addiu	$5, $zero, 90
-	bnez	$2, $BB2_2_6568846072
+	bnez	$2, $BB2_2_382009053
 	
 	addiu	$5, $zero, -90
-$BB2_2_6568846072:
+$BB2_2_382009053:
 	lw	$4, 4($17)
 	addiu	$18, $zero, 1
 	addiu	$6, $zero, 1
@@ -153,7 +153,7 @@ _ZN13FirstStrategy3RunEv:
 	ori	$20, $19, 228
 	lw	$2, 0($20)
 	sltiu	$2, $2, 300
-	beqz	$2, $BB4_5_6568846072
+	beqz	$2, $BB4_5_382009053
 	
 	ori	$21, $19, 208
 	addiu	$17, $sp, 272
@@ -164,11 +164,11 @@ _ZN13FirstStrategy3RunEv:
 	la	$23, has_request_puzzle_interrupt
 	addiu	$18, $sp, 16
 	ori	$fp, $19, 212
-$BB4_2_6568846072:
+$BB4_2_382009053:
 	sw	$17, 0($21)
-$BB4_3_6568846072:
+$BB4_3_382009053:
 	lbu	$2, 0($23)
-	beqz	$2, $BB4_3_6568846072
+	beqz	$2, $BB4_3_382009053
 	
 	la	$24, has_request_puzzle_interrupt
 	andi	$24, $24, 0xFFFF
@@ -181,9 +181,9 @@ $BB4_3_6568846072:
 	sw	$18, 0($fp)
 	lw	$2, 0($20)
 	sltiu	$2, $2, 300
-	bnez	$2, $BB4_2_6568846072
+	bnez	$2, $BB4_2_382009053
 	
-$BB4_5_6568846072:
+$BB4_5_382009053:
 	lw	$4, 4($16)
 	addiu	$5, $zero, 10
 	jal	_ZN7Spimbot12set_velocityEl
@@ -332,8 +332,8 @@ $BB4_5_6568846072:
 	jal	_ZN7Spimbot12set_velocityEl
 	
 	sb	$zero, 8($16)
-$BB4_6_6568846072:
-	j	$BB4_6_6568846072
+$BB4_6_382009053:
+	j	$BB4_6_382009053
 	
 	.data
 	.globl	_ZTV13FirstStrategy

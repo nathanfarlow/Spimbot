@@ -4,11 +4,11 @@
 	.align	2
 _ZN7Spimbot9set_angleEl11Orientation:
 	move	$2, $5
-	bnez	$6, $BB0_2_411270032
+	bnez	$6, $BB0_2_7546850795
 	
 	lw	$2, 0($4)
 	addu	$2, $2, $5
-$BB0_2_411270032:
+$BB0_2_7546850795:
 	sw	$2, 0($4)
 	lui	$2, 65535
 	ori	$3, $2, 20
