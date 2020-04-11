@@ -1,2 +1,5 @@
 src/out
 spimbot.s
+
+*.sublime-project
+*.sublime-workspace
