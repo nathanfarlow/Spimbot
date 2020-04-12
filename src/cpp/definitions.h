@@ -47,7 +47,7 @@ constexpr unsigned kCostScan = 1;
 constexpr unsigned kCostShoot = 50;
 
 //The kernel sets these to 1 when an interrupt is called and acknowledged.
-//It is the userland code's responsibility to disable it.
+//It is the userland code's responsibility to set it back to 0.
 extern volatile uint8_t has_bonk_interrupt;
 extern volatile uint8_t has_timer_interrupt;
 extern volatile uint8_t has_request_puzzle_interrupt;
@@ -61,7 +61,6 @@ struct OpponentHintInfo {
     //Angle from the target host to your opponent, -360 to +360
     short angle;
 };
-
 
 struct ScannerInfo {
     //X tile of the tile that was "hit".
