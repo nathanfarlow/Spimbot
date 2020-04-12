@@ -15,6 +15,6 @@ OUTDIR = out
 UNSAFE_FAST = NO
 
 #If -O0 works, try to increase it until it breaks.
-CLANGFLAGS = -O3
+CLANGFLAGS = -O3 -I include
 
 include $(CSPIM)/tools/.makefile

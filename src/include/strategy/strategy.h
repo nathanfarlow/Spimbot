@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Spimbot.h"
+#include "../spimbot.h"
 
 class Strategy {
 protected:

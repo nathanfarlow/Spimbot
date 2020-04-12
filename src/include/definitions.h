@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 
-#include "Puzzle.h"
-#include "Map.h"
+#include "puzzle.h"
+#include "map.h"
 
 struct OpponentHintInfo;
 struct ScannerInfo;

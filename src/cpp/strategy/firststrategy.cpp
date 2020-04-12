@@ -1,7 +1,7 @@
-#include "FirstStrategy.h"
-#include "../Puzzle.h"
-
 #include <stdio.h>
+
+#include "strategy/firststrategy.h"
+#include "puzzle.h"
 
 void __attribute__((optnone)) sleep(unsigned cycles) {
     for(unsigned i = 0; i < cycles / 5; i++);

@@ -1,4 +1,4 @@
-#include "Puzzle.h"
+#include "puzzle.h"
 
 extern "C" {
     //Code is in puzzle_sol.s

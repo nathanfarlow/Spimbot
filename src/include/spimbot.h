@@ -2,7 +2,7 @@
 
 #include "definitions.h"
 
-#include "Map.h"
+#include "map.h"
 
 constexpr unsigned kMaxVel = 10;
 constexpr unsigned kMinVel = -10;

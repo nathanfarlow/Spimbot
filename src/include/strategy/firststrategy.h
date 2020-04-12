@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Strategy.h"
+#include "strategy.h"
 
 class FirstStrategy : public Strategy {
 public:

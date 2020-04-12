@@ -2,8 +2,8 @@
 #include "definitions.h"
 #include "util.h"
 
-#include "Spimbot.h"
-#include "strategy/FirstStrategy.h"
+#include "spimbot.h"
+#include "strategy/firststrategy.h"
 
 void init() {
     //Construct interrupt mask
