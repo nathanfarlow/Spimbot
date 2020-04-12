@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 
-#include "puzzle.h"
-#include "map.h"
+#include "puzzle/puzzle.h"
+#include "spimbot/map.h"
 
 struct OpponentHintInfo;
 struct ScannerInfo;
@@ -24,7 +24,7 @@ struct ScannerInfo;
 #define GET_BYTECOINS           ((uint32_t*)0xffff00e4)
 #define USE_SCANNER             ((ScannerInfo**)0xffff00e8)
 
-#define REQUEST_PUZZLE          ((Puzzle**)0xffff00d0)
+#define REQUEST_PUZZLE          ((volatile Puzzle**)0xffff00d0)
 #define SUBMIT_SOLUTION         ((Solution**)0xffff00d4)
 
 
@@ -49,7 +49,6 @@ constexpr unsigned kCostShoot = 50;
 //The kernel sets these to 1 when an interrupt is called and acknowledged.
 //It is the userland code's responsibility to set it back to 0.
 extern volatile uint8_t has_bonk_interrupt;
-extern volatile uint8_t has_timer_interrupt;
 extern volatile uint8_t has_request_puzzle_interrupt;
 extern volatile uint8_t has_respawn_interrupt;
 

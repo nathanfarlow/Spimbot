@@ -1,8 +1,8 @@
 
 #include "definitions.h"
-#include "util.h"
+#include "util/util.h"
 
-#include "spimbot.h"
+#include "spimbot/spimbot.h"
 #include "controller/controller.h"
 
 void init() {

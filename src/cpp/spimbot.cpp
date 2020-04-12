@@ -1,4 +1,4 @@
-#include "spimbot.h"
+#include "spimbot/spimbot.h"
 #include "definitions.h"
 
 void Spimbot::set_angle(int32_t angle, Orientation orientation) {

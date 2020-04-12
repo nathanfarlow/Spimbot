@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../spimbot.h"
+#include "spimbot/spimbot.h"
 #include "intent.h"
 
 class AbstractController {
@@ -23,6 +23,5 @@ public:
 
     virtual void Start() = 0;
 
-    virtual void Visit(IdleIntent *intent) = 0;
-    virtual void Visit(LineMoveIntent *intent) = 0;
+    Spimbot &get_bot() {return bot_;}
 };
