@@ -17,4 +17,5 @@ public:
     Controller(Spimbot &bot) : AbstractController(bot) {}
 
     void Start() override;
+    void OnTimer() override;
 };

@@ -9,7 +9,6 @@ private:
     volatile Puzzle puzzle_;
     Solution solution_;
 
-    void Request();
     void Finish();
 public:
     PuzzleManager()
@@ -18,10 +17,9 @@ public:
     }
 
     bool HasPuzzle();
-
-    //Consumes all resources
+    
+    void Request();
     void Solve();
-    void RequestPause();
 
     bool is_solving() const {return solving_;}
 };

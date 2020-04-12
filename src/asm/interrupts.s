@@ -154,7 +154,9 @@ timer_interrupt:
     #Jump to handler in external C land
     la      $ra, timer_ret
     la      $k0, timer_interrupt_handler
-    jr      $k0
+    mtc0    $k0, $14    #Write EPC
+    eret
+    
 timer_ret:
 
     #lw      $1 0($sp)

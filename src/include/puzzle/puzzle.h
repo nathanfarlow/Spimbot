@@ -3,11 +3,9 @@
 constexpr unsigned kMaxGridSize = 16;
 
 struct Puzzle {
-
-private:
-    int num_rows_;
-    int num_cols_;
-    int num_colors_;
+    int num_rows;
+    int num_cols;
+    int num_colors;
     unsigned char board[kMaxGridSize * kMaxGridSize];
 };
 

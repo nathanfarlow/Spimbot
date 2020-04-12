@@ -1,28 +1,28 @@
 #include "puzzle/puzzlemanager.h"
 
+#include <stdio.h>
+
 #include "definitions.h"
 
 extern "C" {
     //Code is in puzzle_sol.s
-    void solve(Puzzle *puzzle, Solution *solution, int row, int col);
+    void solve(volatile Puzzle *puzzle, Solution *solution, int row, int col);
 }
 
 void PuzzleManager::Request() {
-    if(has_puzzle_ || requesting_) return;
+    if(has_puzzle_ || requesting_)
+        return;
 
     requesting_ = true;
     *REQUEST_PUZZLE = &puzzle_;
 }
 
 void PuzzleManager::Finish() {
+    solving_ = false;
+    has_puzzle_ = false;
 
     //Submit solution
     *SUBMIT_SOLUTION = &solution_;
-
-    has_puzzle_ = false;
-
-    //Try to get another puzzle.
-    Request();
 }
 
 bool PuzzleManager::HasPuzzle() {
@@ -37,15 +37,20 @@ bool PuzzleManager::HasPuzzle() {
 }
 
 void PuzzleManager::Solve() {
-
-    while(!HasPuzzle()) Request();
-
     solving_ = true;
-    solve((Puzzle*)&puzzle_, &solution_, 0, 0);
+
+#ifdef DEBUG
+    const unsigned start = *TIMER;
+#endif
+
+    solve(&puzzle_, &solution_, 0, 0);
+
+#ifdef DEBUG
+    const unsigned end = *TIMER;
+
+    printf("Number of cycles for rows: %d cols: %d: colors: %d was %u\n",
+        puzzle_.num_rows, puzzle_.num_cols, puzzle_.num_colors, end - start);
+#endif
 
     Finish();
-}
-
-void PuzzleManager::RequestPause() {
-    solving_ = false;
 }
