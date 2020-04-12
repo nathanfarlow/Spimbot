@@ -3,7 +3,7 @@
 #include "util.h"
 
 #include "spimbot.h"
-#include "strategy/firststrategy.h"
+#include "controller/controller.h"
 
 void init() {
     //Construct interrupt mask
@@ -18,9 +18,8 @@ int main() {
     init();
 
     Spimbot bot;
-    FirstStrategy strategy(bot);
-    Strategy::set_global(&strategy);
-    strategy.Run();
+    Controller controller(bot);
+    controller.Start();
 
     return 0;
 }
