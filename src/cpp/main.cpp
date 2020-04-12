@@ -15,7 +15,6 @@ void init() {
 }
 
 int main() {
-
     init();
 
     Spimbot bot;
