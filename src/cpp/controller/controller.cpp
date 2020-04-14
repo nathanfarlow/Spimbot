@@ -13,7 +13,7 @@ void Controller::Start() {
     puzzle_manager_.Request();
 
     //Call OnTimer() to initialize starting logic
-    *TIMER += 1;
+    OnTimer();
 
     while(true) {
 
@@ -90,7 +90,7 @@ void Controller::OnTimer() {
             if(current->IsAsync()) {
 
                 //Minimum cycles we can support asynchronously
-                constexpr unsigned kMinCycles = 200;
+                constexpr unsigned kMinCycles = 250;
 
                 const unsigned duration = current->get_duration();
 
@@ -101,7 +101,7 @@ void Controller::OnTimer() {
                 } else {
                     //The approximate number of instructions it takes to handle the timer interrupt
                     //So we can call Stop() on the async intent as accurately as possible
-                    constexpr unsigned kNumHandlerInst = 55;
+                    constexpr unsigned kNumHandlerInst = 138;
                     *TIMER = current->get_start() + duration - kNumHandlerInst;
                     
                     return;
