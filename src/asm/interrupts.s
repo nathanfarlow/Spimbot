@@ -84,7 +84,7 @@ respawn_interrupt:
 timer_interrupt:
     sw      $0, TIMER_ACK
 
-    sub     $sp, $sp, 256
+    sub     $sp, $sp, 124
 
     #sw      $1 0($sp) #Already saved at
     sw      $2 4($sp)
@@ -118,38 +118,9 @@ timer_interrupt:
     sw      $30 116($sp)
     sw      $31 120($sp)
 
-    s.s     $f0 124($sp)
-    s.s     $f1 128($sp)
-    s.s     $f2 132($sp)
-    s.s     $f3 136($sp)
-    s.s     $f4 140($sp)
-    s.s     $f5 144($sp)
-    s.s     $f6 148($sp)
-    s.s     $f7 152($sp)
-    s.s     $f8 156($sp)
-    s.s     $f9 160($sp)
-    s.s     $f10 164($sp)
-    s.s     $f11 168($sp)
-    s.s     $f12 172($sp)
-    s.s     $f13 176($sp)
-    s.s     $f14 180($sp)
-    s.s     $f15 184($sp)
-    s.s     $f16 188($sp)
-    s.s     $f17 192($sp)
-    s.s     $f18 196($sp)
-    s.s     $f19 200($sp)
-    s.s     $f20 204($sp)
-    s.s     $f21 208($sp)
-    s.s     $f22 212($sp)
-    s.s     $f23 216($sp)
-    s.s     $f24 220($sp)
-    s.s     $f25 224($sp)
-    s.s     $f26 228($sp)
-    s.s     $f27 232($sp)
-    s.s     $f28 236($sp)
-    s.s     $f29 240($sp)
-    s.s     $f30 244($sp)
-    s.s     $f31 248($sp)
+    #Our solver doesn't use floats, so we won't
+    #need to save the float registers. Only the puzzle
+    #solver should be interrupted by the timer.
 
     #Jump to handler in external C land
     la      $ra, timer_ret
@@ -191,40 +162,7 @@ timer_ret:
     lw      $30 116($sp)
     lw      $31 120($sp)
 
-    l.s     $f0 124($sp)
-    l.s     $f1 128($sp)
-    l.s     $f2 132($sp)
-    l.s     $f3 136($sp)
-    l.s     $f4 140($sp)
-    l.s     $f5 144($sp)
-    l.s     $f6 148($sp)
-    l.s     $f7 152($sp)
-    l.s     $f8 156($sp)
-    l.s     $f9 160($sp)
-    l.s     $f10 164($sp)
-    l.s     $f11 168($sp)
-    l.s     $f12 172($sp)
-    l.s     $f13 176($sp)
-    l.s     $f14 180($sp)
-    l.s     $f15 184($sp)
-    l.s     $f16 188($sp)
-    l.s     $f17 192($sp)
-    l.s     $f18 196($sp)
-    l.s     $f19 200($sp)
-    l.s     $f20 204($sp)
-    l.s     $f21 208($sp)
-    l.s     $f22 212($sp)
-    l.s     $f23 216($sp)
-    l.s     $f24 220($sp)
-    l.s     $f25 224($sp)
-    l.s     $f26 228($sp)
-    l.s     $f27 232($sp)
-    l.s     $f28 236($sp)
-    l.s     $f29 240($sp)
-    l.s     $f30 244($sp)
-    l.s     $f31 248($sp)
-
-    add     $sp, $sp, 256
+    add     $sp, $sp, 124
 
     j       interrupt_dispatch
 
