@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "definitions.h"
+#include "util/util.h"
 
 AbstractController *AbstractController::global;
 
@@ -85,10 +86,27 @@ void Controller::OnTimer() {
 
             current->Start();
 
-            //Return to the puzzle solver if we can execute async
+            //Schedule an interrupt and return to the puzzle solver if we can execute async
             if(current->IsAsync()) {
-                *TIMER = current->get_start() + current->get_duration();
-                return;
+
+                //Minimum cycles we can support asynchronously
+                constexpr unsigned kMinCycles = 200;
+
+                const unsigned duration = current->get_duration();
+
+                if(duration < kMinCycles) {
+                    //Just wait for it to terminate synchronously and call ourselves as if there was an interrupt
+                    sleep(*TIMER - current->get_start() + duration);
+                    OnTimer();
+                } else {
+                    //The approximate number of instructions it takes to handle the timer interrupt
+                    //So we can call Stop() on the async intent as accurately as possible
+                    constexpr unsigned kNumHandlerInst = 55;
+                    *TIMER = current->get_start() + duration - kNumHandlerInst;
+                    
+                    return;
+                }
+
             } else {
                 //Otherwise the logic already terminated in Start(),
                 //so remove it and go to the next one.
