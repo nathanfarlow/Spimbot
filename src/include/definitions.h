@@ -81,4 +81,13 @@ struct Point {
     //pixel values. Signed to be more convenient
     //for math where intermediate results may be negative.
     int x, y;
+
+    bool operator==(const Point& lhs, const Point& rhs)
+    {
+	return lhs.x == rhs.x && lhs.y == rhs.y;
+    }
+
+    bool operator!=(const Point& lhs, const Point& rhs) {
+	return !(lhs == rhs);
+    }
 };
