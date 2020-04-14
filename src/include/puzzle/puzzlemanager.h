@@ -12,9 +12,7 @@ private:
     void Finish();
 public:
     PuzzleManager()
-        : solving_(false), has_puzzle_(false), requesting_(false) {
-        Request();
-    }
+        : solving_(false), has_puzzle_(false), requesting_(false) {}
 
     bool HasPuzzle();
     

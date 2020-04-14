@@ -65,13 +65,19 @@
 
 //#define DEBUG_MEMMGR_SUPPORT_STATS 1
 
+#include <stddef.h>
+
 #define POOL_SIZE 8 * 1024 * 1024
 #define MIN_POOL_ALLOC_QUANTAS 16
 
 
 typedef unsigned char byte;
-typedef unsigned long ulong;
+typedef size_t ulong;
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // Initialize the memory manager. This function should be called
 // only once in the beginning of the program.
@@ -81,15 +87,25 @@ void memmgr_init();
 // 'malloc' clone
 //
 void* memmgr_alloc(ulong nbytes);
+#define malloc(__nbytes__) memmgr_alloc(__nbytes__)
 
 // 'free' clone
 //
 void memmgr_free(void* ap);
+#define free(__ap__) memmgr_free(__ap__)
 
-// Prints statistics about the current state of the memory
-// manager
-//
-void memmgr_print_stats();
+#ifdef __cplusplus
+}
+#endif
 
+#ifdef __cplusplus
+void* operator new  (size_t count);
+void* operator new[](size_t count);
+
+void operator delete  (void* ptr) noexcept;
+void operator delete[](void* ptr) noexcept;
+void operator delete  (void* ptr, size_t sz) noexcept;
+void operator delete[](void* ptr, size_t sz) noexcept;
+#endif
 
 #endif // MEMMGR_H

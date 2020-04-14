@@ -2,7 +2,7 @@
 
 #include "abstractcontroller.h"
 #include "puzzle/puzzlemanager.h"
-#include "util/arraylist.h"
+#include "util/queue.h"
 
 constexpr unsigned kMaxIntents = 512;
 
@@ -11,7 +11,9 @@ private:
 
     PuzzleManager puzzle_manager_;
 
-    ArrayList<Intent, kMaxIntents> intents_;
+    Queue<Intent*> intents_;
+
+    void Strategize(bool is_resuming_async);
 
 public:
     Controller(Spimbot &bot) : AbstractController(bot) {}

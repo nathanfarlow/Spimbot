@@ -5,6 +5,8 @@
 #include "spimbot/spimbot.h"
 #include "controller/controller.h"
 
+#include "util/memory.h"
+
 void init() {
     //Construct interrupt mask
     uint32_t mask = BONK_INT_MASK | REQUEST_PUZZLE_INT_MASK
@@ -12,6 +14,8 @@ void init() {
                         | GLOBAL_INT_ENABLE_MASK;
 
     set_status_reg(mask);
+
+    memmgr_init();
 }
 
 int main() {

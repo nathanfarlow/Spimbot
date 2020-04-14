@@ -14,10 +14,6 @@ enum Orientation {
 //Functions are inlined because the toolchain is not smart enough
 //to inline functions in cpp files.
 class Spimbot {
-private:
-    //The cycle when we set the velocity last
-    unsigned cycle_velocity_changed_ = 0;
-
 public:
     bool IsBonked()       const {return has_bonk_interrupt;}
     void ClearBonked()          {has_bonk_interrupt = false;}
@@ -55,7 +51,6 @@ public:
 
     int32_t get_velocity()      const {return *VELOCITY;}
     void set_velocity(int32_t velocity) {
-        cycle_velocity_changed_ = *TIMER + 2;
         *VELOCITY = velocity;
     }
 
@@ -67,9 +62,5 @@ public:
 
     Point get_pos() const {
         return {(int)*BOT_X, (int)*BOT_Y};
-    }
-
-    unsigned get_cycle_velocity_changed_() const {
-        return cycle_velocity_changed_;
     }
 };

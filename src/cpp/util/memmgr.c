@@ -6,7 +6,7 @@
 // This code is in the public domain.
 //----------------------------------------------------------------
 #include <stdio.h>
-#include "util/memmgr.h"
+#include "util/memory.h"
 
 typedef ulong Align;
 
@@ -50,52 +50,6 @@ void memmgr_init()
     base.s.size = 0;
     freep = 0;
     pool_free_pos = 0;
-}
-
-
-void memmgr_print_stats()
-{
-    #ifdef DEBUG_MEMMGR_SUPPORT_STATS
-    mem_header_t* p;
-
-    printf("------ Memory manager stats ------\n\n");
-    printf(    "Pool: free_pos = %lu (%lu bytes left)\n\n",
-            pool_free_pos, POOL_SIZE - pool_free_pos);
-
-    p = (mem_header_t*) pool;
-
-    while (p < (mem_header_t*) (pool + pool_free_pos))
-    {
-        printf(    "  * Addr: %p; Size: %8lu\n",
-                p, p->s.size);
-
-        p += p->s.size;
-    }
-
-    printf("\nFree list:\n\n");
-
-    if (freep)
-    {
-        p = freep;
-
-        while (1)
-        {
-            printf(    "  * Addr: %p; Size: %8lu; Next: %p\n",
-                    p, p->s.size, p->s.next);
-
-            p = p->s.next;
-
-            if (p == freep)
-                break;
-        }
-    }
-    else
-    {
-        printf("Empty\n");
-    }
-
-    printf("\n");
-    #endif // DEBUG_MEMMGR_SUPPORT_STATS
 }
 
 

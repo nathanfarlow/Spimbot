@@ -2,6 +2,11 @@
 
 #include "definitions.h"
 
+//Size of tiles in pixels
+constexpr int kTileSize = 8;
+//Number of tiles on board
+constexpr int kNumTiles = 40;
+
 enum TileType {
     WALL = 1,
     HOST_MASK = 2,
@@ -25,8 +30,5 @@ struct Tile {
 };
 
 struct Map {
-    static constexpr unsigned NUM_ROWS = 40;
-    static constexpr unsigned NUM_COLS = 40;
-
-    Tile map[NUM_ROWS][NUM_COLS];
+    Tile map[kNumTiles][kNumTiles];
 };

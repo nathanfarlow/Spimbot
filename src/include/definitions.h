@@ -69,7 +69,7 @@ constexpr unsigned kCostShoot = 50;
 constexpr int kMaxVelocity = 10;
 constexpr int kMinVelocity = -10;
 
-constexpr unsigned kBotRadius = 3;
+constexpr int kBotRadius = 3;
 
 //The kernel sets these to 1 when an interrupt is called and acknowledged.
 //It is the userland code's responsibility to set it back to 0.

@@ -13,10 +13,10 @@ enum class IntentType {
 class Intent {
 
 protected:
-    unsigned cycle_start_ = 0;
-    unsigned cycle_duration_ = 0;
+    unsigned start_ = 0;
+    unsigned duration_ = 0;
 
-    bool started_ = false;
+    bool running_ = false;
     bool interrupted_ = false;
 
     AbstractController *controller_;
@@ -33,16 +33,17 @@ public:
     virtual void Start() = 0;
     virtual void Stop() = 0;
 
-    virtual bool IsDone()   const {return WasInterrupted() || *TIMER >= get_cycle_start() + get_cycle_duration();}
-    bool IsAsync()          const {return async_;}
+    //Time ran out or interrupted, but technically still running. Need to call Stop()
+    virtual bool IsExpired()        const {return WasInterrupted() || *TIMER >= get_start() + get_duration();}
+    bool IsAsync()                  const {return async_;}
 
-    virtual unsigned get_cycle_start()      const {return cycle_start_;}
-    virtual unsigned get_cycle_duration()   const {return cycle_duration_;}
+    virtual unsigned get_start()    const {return start_;}
+    virtual unsigned get_duration() const {return duration_;}
 
-    virtual bool IsStarted()                const {return started_;}
-    virtual bool WasInterrupted()           const {return interrupted_;}
+    virtual bool IsRunning()        const {return running_;}
+    virtual bool WasInterrupted()   const {return interrupted_;}
 
-    IntentType get_type()       const {return type_;}
+    IntentType get_type()           const {return type_;}
 };
 
 //Intention to move in a straight line
@@ -64,6 +65,5 @@ public:
     void Start() override;
     void Stop() override;
 
-    unsigned get_cycle_start() const override;
     bool WasInterrupted() const override;
 };
