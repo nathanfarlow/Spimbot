@@ -1,0 +1,220 @@
+char[][] host_locations = // x, y coordinates of hosts
+char direction; // 8 compass directions, including 45 degrees. 0 is East, rest is counterclockwise
+
+// These two globals track if a target has been recently shot so it's not retargeted,
+// as UDP packets take a long time to hit
+char shot_x = -1;
+char shot_y = -1;
+
+//bool keep_direction; // Tracks if spimbot is currently travelling in a certain direction so as not to change its angle
+bool is_travelling; // Tracks is spimbot is currently moving
+
+bool has_puzzle; // Tracks if we have received the puzzle from IO yet
+
+bool hit_enemy; // Tracks if we've hit the enemy yet for Lab 9 part 2
+
+int main() {
+    // Create interrupt mask
+    
+    // If start at (0, 0) turn 315 degrees
+    // If start at (39, 39) turn 135 degrees
+    // Then quick shoot a freebie (this won't work if hosts are randomized)
+    
+    generate_host_locations();
+    
+    while (true) {
+	if (get_bytecoins() < 100) {
+	    mine_bytecoin();
+	    continue;
+	}
+
+	int target_x, target_y = get_target();
+
+	// Tiles are 8x8, we want to target the middle of a host
+	target_x *= 8;
+	target_y *= 8;
+	target_x += 4;
+	target_x += 4;
+
+	int player_x = bot_x();
+	int player_y = bot_y();
+	player_x *= 8;
+	player_y *= 8;
+
+	int current_angle = get_angle();
+	
+	int angle = arctan(target_x - player_x, target_y - player_y);
+	set_angle(angle);
+	ScannerInfo* scanner_result = scan();
+
+	if (scanner_result->tile_type == 0b01010) {
+	    // Shoot enemy host twice to make it ours
+	    shoot_UDP();
+	    shoot_UDP();
+	    shot_x = target_x;
+	    shot_y = target_y;
+	    //keep_direction = false;
+	    continue;
+	} else if (scanner_result->tile_type == 0b00010) {
+	    // Shoot neutral host
+	    shoot_UDP();
+	    shot_x = target_x;
+	    shot_y = target_y;
+	    //keep_direction = false;
+	    continue;
+	} else if (scanner_result->tile_type == 0b11000) {
+	    // Shoot enemy
+	    shoot_UDP();
+	    hit_enemy = true;
+	    //keep_direction = false;
+	    continue;
+	} else {
+	    // Blocked, must travel at an angle and try again
+	    int angle_sweep = 5;
+	    int travel_angle;
+
+	    while (true) {
+		travel_angle = angle + angle_sweep;
+		set_angle(angle);
+		scanner_result = scan(angle);
+		if (scanner_result->tile_Type != 0b00001) {
+		    break
+		}
+
+		travel_angle = angle - angle_sweep;
+		set_angle(angle);
+		scanner_result = scan(angle);
+		if (scanner_result->tile_Type != 0b00001) {
+		    break
+		}
+
+		angle_sweep += 2;
+	    }
+
+	    set_angle(travel_angle);
+	    
+	    set_velocity(10);
+
+	    // Moves one pixel every 1,000 cycles
+	    is_travelling = true;
+	    set_timer(STEP_SIZE_PIXEL * 1000);
+	}
+
+	while (is_travelling) {
+	    mine_bytecoin();
+	}
+    }
+}
+
+void mine_bytecoin() {
+    request_puzzle();
+    while (!has_puzzle) {
+
+    }
+    has_puzzle = false;
+    solve_puzzle();
+}
+
+int arctan(int x, int y) {
+    // We can use the taylor approximation arctan(x) = x - (x^3)/3 + (x^5)/5
+    // Important instructions:
+    // mtc1 and mfc1: fs, rs
+    // div.s
+    // round.w.s rounds a number
+
+    int delta = 0;
+    if (abs(y) > abs(x)) {
+    // If abs(y) > abs(x), use arctan(x) = 90 - arctan(1/x) as series only converges on |x| <= 1
+	delta += 90;
+	// use xor swap alogorithm for arctan(y, x)
+	// or use temp register
+	x ^= y;
+	y ^= x;
+	x ^= y;
+    }
+
+    if (x < 0) {
+	// Arctan only gives results from -90 to 90
+	delta += 180;
+    }
+    
+    float result = y / x;
+    // Taylor series
+    result = result - (result^3)/3 + (result^5)/5;
+    // Convert to degrees
+    result *= 180 / Math.PI;
+    
+    return round(result) + delta;
+}
+
+void generate_host_locations() {
+    char** arena_map = get_arena_map();
+    char host_num = 0;
+    for (int x = 0; x < NUM_COLS, x++) {
+	for (int y = 0; y < NUM_ROWS; y++) {
+	    if (arena_map[y][x] & 0b0010) {
+		host_locations[host_num][0] = x;
+		host_locations[host_num][1] = y;
+		host_num++;
+	    }
+	}
+    }
+}
+
+// returns target_x, target_y using $v0, $v1
+char[1] get_target() {
+    if (!hit_enemy) {
+	return 39, 39 // Enemy is at 39, 39
+    }
+    // Write pointer to ARENA_MAP
+    char** arena_map = get_arena_map();
+    
+    int shortest_distance = 0xfffffff; 
+    // use bitwise shift
+    char player_x = bot_x() / 8;
+    char player_y = bot_y() / 8;
+    char target_x, target_y;
+
+    for (char i = 0; i < NUM_HOSTS; i++) {
+	char host_x = host_locations[i][0];
+	char host_y = host_locations[i][1];
+	// Note that arena_map is in (y, x) format
+        char host = arena_map[host_y][host_x];
+
+	if (!(host & 0b0100)) {
+	    // host is neutral or enemy
+	    int new_distance = distance(player_x, player_y, host_x, host_y);
+	    if (new_distance < shortest_distance) {
+		if ((target_x != shot_x) || (target_y != shot_y)) {
+		    target_x = host_locations[i][0];
+		    target_y = host_locations[i][1];
+		    shortest_distance = new_distance;
+		}
+	    }
+	}
+    }
+
+    return target_x, target_y;
+}
+
+int distance_square(x, y, target_x, target_y) {
+    int delta_x = x - target_x;
+    int delta_y = y - target_y;
+    return delta_x * delta_x + delta_y + delta_y;
+}
+
+int distance_pixel(x, y, target_x, target_y) {
+    int delta_x = x - target_x;
+    int delta_y = y - target_y;
+    return round(sqrt(delta_x * delta_x + delta_y * delta_y));
+}
+
+void bonk_interrupt() {
+    is_travelling = false;
+    *(TIMER) = 0;
+}
+
+void timer_interrupt() {
+    is_travelling = false;
+}
+
