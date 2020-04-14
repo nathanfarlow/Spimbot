@@ -14,7 +14,10 @@ class Intent {
 
 protected:
     unsigned cycle_start_ = 0;
-    unsigned cycle_end_ = 0;
+    unsigned cycle_duration_ = 0;
+
+    bool started_ = false;
+    bool interrupted_ = false;
 
     AbstractController *controller_;
     const IntentType type_;
@@ -30,11 +33,14 @@ public:
     virtual void Start() = 0;
     virtual void Stop() = 0;
 
-    virtual bool IsDone()       const {return *TIMER >= get_cycle_end();}
-    bool IsAsync()              const {return async_;}
+    virtual bool IsDone()   const {return WasInterrupted() || *TIMER >= get_cycle_start() + get_cycle_duration();}
+    bool IsAsync()          const {return async_;}
 
-    unsigned get_cycle_start()  const {return cycle_start_;}
-    unsigned get_cycle_end()    const {return cycle_end_;}
+    virtual unsigned get_cycle_start()      const {return cycle_start_;}
+    virtual unsigned get_cycle_duration()   const {return cycle_duration_;}
+
+    virtual bool IsStarted()                const {return started_;}
+    virtual bool WasInterrupted()           const {return interrupted_;}
 
     IntentType get_type()       const {return type_;}
 };
@@ -42,12 +48,22 @@ public:
 //Intention to move in a straight line
 class LineMoveIntent : public Intent {
 private:
-    int32_t from_x_, from_y_;
-    int32_t to_x_, to_y_;
+    Point from_;
+    const Point to_;
+
+    const int speed_;
+
+    int ComputeAngle();
+    unsigned ComputeCycles();
+
 public:
-    LineMoveIntent(AbstractController *controller)
-        : Intent(controller, IntentType::LINE_MOVE, true) {}
+    LineMoveIntent(AbstractController *controller, Point to, int speed)
+        : Intent(controller, IntentType::LINE_MOVE, true),
+            to_(to), speed_(speed) {}
 
     void Start() override;
     void Stop() override;
+
+    unsigned get_cycle_start() const override;
+    bool WasInterrupted() const override;
 };

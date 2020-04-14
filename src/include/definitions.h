@@ -5,8 +5,27 @@
 #include "puzzle/puzzle.h"
 #include "spimbot/map.h"
 
-struct OpponentHintInfo;
-struct ScannerInfo;
+struct OpponentHintInfo {
+    //X tile of the host you own that is closest to your opponent
+    char host_x;
+    //Y tile of the host you own that is closest to your opponent
+    char host_y;
+    //Angle from the target host to your opponent, -360 to +360
+    short angle;
+};
+
+struct ScannerInfo {
+    //X tile of the tile that was "hit".
+    unsigned char hit_x;
+    //Y tile of the tile that was "hit".
+    unsigned char hit_y;
+
+    Tile tile;
+};
+
+struct ScoreReport {
+    uint32_t our_score, opponent_score;
+};
 
 //memory-mapped I/O
 #define VELOCITY                ((int32_t*)0xffff0010)
@@ -27,6 +46,7 @@ struct ScannerInfo;
 #define REQUEST_PUZZLE          ((volatile Puzzle**)0xffff00d0)
 #define SUBMIT_SOLUTION         ((Solution**)0xffff00d4)
 
+#define SCORES_REQUEST          ((ScoreReport**)0xffff1018)
 
 //Interrupt masks
 #define BONK_INT_MASK           0x1000
@@ -46,26 +66,19 @@ struct ScannerInfo;
 constexpr unsigned kCostScan = 1;
 constexpr unsigned kCostShoot = 50;
 
+constexpr int kMaxVelocity = 10;
+constexpr int kMinVelocity = -10;
+
+constexpr unsigned kBotRadius = 3;
+
 //The kernel sets these to 1 when an interrupt is called and acknowledged.
 //It is the userland code's responsibility to set it back to 0.
 extern volatile uint8_t has_bonk_interrupt;
 extern volatile uint8_t has_request_puzzle_interrupt;
 extern volatile uint8_t has_respawn_interrupt;
 
-struct OpponentHintInfo {
-    //X tile of the host you own that is closest to your opponent
-    char host_x;
-    //Y tile of the host you own that is closest to your opponent
-    char host_y;
-    //Angle from the target host to your opponent, -360 to +360
-    short angle;
-};
-
-struct ScannerInfo {
-    //X tile of the tile that was "hit".
-    unsigned char hit_x;
-    //Y tile of the tile that was "hit".
-    unsigned char hit_y;
-
-    Tile tile;
+struct Point {
+    //pixel values. Signed to be more convenient
+    //for math where intermediate results may be negative.
+    int x, y;
 };

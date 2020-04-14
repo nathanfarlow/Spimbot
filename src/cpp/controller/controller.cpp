@@ -31,6 +31,10 @@ void Controller::Start() {
     
 }
 
+/*
+This is where the strategizing happens. We update our bot
+and then when we return, the puzzle continues to solve
+*/
 void Controller::OnTimer() {
     *TIMER += 100000;
 }
