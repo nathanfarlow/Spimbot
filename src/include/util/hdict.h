@@ -7,7 +7,6 @@
 #define false 0
 #define true 1
 #define NULL (void *)0
-typedef unsigned int size_t;
 typedef char bool;
 typedef void *hdict_key;
 typedef void *hdict_value;

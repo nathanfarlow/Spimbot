@@ -17,4 +17,12 @@ struct queue_header {
 	node *back;
 };
 
+queue *queue_new();
+
+void enq(queue *Q, void *x);
+
+void *deq(queue *Q);
+
+void queue_free(queue *Q, void (*elem_free)(void *));
+
 #endif
