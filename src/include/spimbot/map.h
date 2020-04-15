@@ -1,7 +1,5 @@
 #pragma once
 
-#include "definitions.h"
-
 //Size of tiles in pixels
 constexpr int kTileSize = 8;
 //Number of tiles on board
