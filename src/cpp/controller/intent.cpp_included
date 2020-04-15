@@ -1,8 +1,10 @@
-#include "controller/intent.h"
+/*
+    Unfortunately due to the limitations in the toolchain right now,
+    only one source file can include a header that defines an abstract
+    class. So including this file from controller.cpp is the workaround.
+*/
 
 #include <math.h>
-
-#include "controller/abstractcontroller.h"
 
 constexpr float kCycleRatio = 10000;
 

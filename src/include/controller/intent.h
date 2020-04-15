@@ -7,7 +7,7 @@
 class AbstractController;
 
 enum class IntentType {
-    LINE_MOVE
+    WAIT_PUZZLE, LINE_MOVE
 };
 
 class Intent {
@@ -25,13 +25,15 @@ protected:
 
 public:
 
-    Intent(AbstractController *controller, IntentType type, bool async)
-        : controller_(controller), type_(type), async_(async) {}
+    Intent(IntentType type, AbstractController *controller, bool async)
+        : type_(type), controller_(controller), async_(async) {}
 
     virtual ~Intent() = default;
 
     virtual void Start() = 0;
     virtual void Stop() = 0;
+
+    virtual void Interrupt() {interrupted_ = true;}
 
     //Time ran out or interrupted, but technically still running. Need to call Stop()
     virtual bool IsExpired()        const {return WasInterrupted() || *TIMER >= get_start() + get_duration();}
@@ -44,6 +46,20 @@ public:
     virtual bool WasInterrupted()   const {return interrupted_;}
 
     IntentType get_type()           const {return type_;}
+};
+
+class WaitForPuzzleIntent : public Intent {
+public:
+    WaitForPuzzleIntent(AbstractController *controller, unsigned max_wait)
+        : Intent(IntentType::WAIT_PUZZLE, controller, true) {
+        duration_ = max_wait;
+    }
+
+    WaitForPuzzleIntent(AbstractController *controller)
+        : WaitForPuzzleIntent(controller, kNumGameCycles * 100) {}
+
+    void Start() {start_ = *TIMER; running_ = true;}
+    void Stop()  {running_ = false;}
 };
 
 //Intention to move in a straight line
@@ -59,11 +75,11 @@ private:
 
 public:
     LineMoveIntent(AbstractController *controller, Point to, int speed)
-        : Intent(controller, IntentType::LINE_MOVE, true),
-            to_(to), speed_(speed) {}
+        : Intent(IntentType::LINE_MOVE, controller, true),
+        to_(to), speed_(speed) {}
 
     void Start() override;
-    void Stop() override;
+    void Stop()  override;
 
     bool WasInterrupted() const override;
 };

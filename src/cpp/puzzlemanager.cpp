@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "definitions.h"
+#include "controller/controller.h"
 
 extern "C" {
     //Code is in puzzle_sol.s
@@ -23,6 +24,8 @@ void PuzzleManager::Finish() {
 
     //Submit solution
     *SUBMIT_SOLUTION = &solution_;
+
+    controller_->OnSolve();
 }
 
 bool PuzzleManager::HasPuzzle() {
