@@ -35,7 +35,7 @@ void Controller::Start() {
     
 }
 
-//Returns the center of the tile
+//Returns the pixel coordinates of the center of the tile
 inline Point TileToPixels(int x, int y) {
     return {x * kTileSize + kTileSize / 2, y * kTileSize + kTileSize / 2};
 }
@@ -51,12 +51,13 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         delete intents_.pop();
     }
 
+    if(first_run) {
+        intents_.enqueue(new LineMoveIntent(this, TileToPixels(1, 1), kMaxVelocity));
+    }
+
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
-        intents_.enqueue(new LineMoveIntent(this, TileToPixels(1, 1), kMaxVelocity));
-        intents_.enqueue(new LineMoveIntent(this, TileToPixels(38, 1), kMaxVelocity));
-        intents_.enqueue(new LineMoveIntent(this, TileToPixels(38, 38), kMaxVelocity));
-        intents_.enqueue(new LineMoveIntent(this, TileToPixels(1, 38), kMaxVelocity));
+        intents_.enqueue(new WaitForPuzzleIntent(this))
     }
 }
 
