@@ -1,0 +1,16 @@
+#include "util/pathfinder.h"
+
+Queue<Point> Pathfinder::FindPath(Point from, Point to) {
+    Queue<Point> path;
+    PriorityQueue<int, 43> test;
+
+    test.enqueue(1);
+    test.enqueue(5);
+    test.enqueue(2);
+    test.enqueue(15);
+
+    printf("THIS IS IT: %d\n", test.front());
+    printf("THIS IS IT: %d\n", test.pop());
+
+    return path;
+}

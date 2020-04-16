@@ -52,6 +52,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
     }
 
     if(first_run) {
+        pathfinder_.FindPath({2, 2}, {2, 2});
         intents_.enqueue(new LineMoveIntent(this, TileToPixels(1, 1), kMaxVelocity));
     }
 
@@ -144,6 +145,7 @@ void Controller::OnSolve() {
     class. So including this file from controller.cpp is the workaround.
 */
 #include "intent.cpp_included"
+#include "pathfinder.cpp_included"
 
 extern "C" {
 

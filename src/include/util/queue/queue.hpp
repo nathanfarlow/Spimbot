@@ -20,7 +20,7 @@ void Queue<T>::clear() {
 }
 
 template <typename T>
-void Queue<T>::enqueue(T value) {
+void Queue<T>::enqueue(const T &value) {
     if(empty()) {
         head_ = new Node(value);
         tail_ = head_;
@@ -33,17 +33,14 @@ void Queue<T>::enqueue(T value) {
 }
 
 template <typename T>
-T Queue<T>::front() {
-    if(empty()) return T();
+T& Queue<T>::front() {
     return head_->data;
 }
 
 template <typename T>
 T Queue<T>::pop() {
-    if(empty()) return T();
-
-    const auto ret = head_->data;
-    const auto new_head = head_->next;
+    auto &ret = head_->data;
+    auto new_head = head_->next;
 
     delete head_;
     head_ = new_head;

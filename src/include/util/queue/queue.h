@@ -1,8 +1,10 @@
+#pragma once
+
 #include <stddef.h>
 
 template <typename T>
 class Queue {
-private:
+protected:
     struct Node {
         T data;
         Node *next;
@@ -15,17 +17,17 @@ private:
 
 public:
 
-    ~Queue();
+    virtual ~Queue();
 
-    void enqueue(T value);
-    T front();
-    T pop();
+    virtual void enqueue(const T& value);
+    virtual T& front();
+    virtual T pop();
 
-    void clear();
+    virtual void clear();
 
-    size_t size() const {return size_;}
+    virtual size_t size() const {return size_;}
 
-    bool empty()  const {return size() == 0;}
+    virtual bool empty()  const {return size() == 0;}
 };
 
 #include "queue.hpp"
