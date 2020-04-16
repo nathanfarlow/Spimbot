@@ -18,15 +18,15 @@ struct Tile {
 
     bool IsGround()     const {return mask == 0;}
 
-    bool IsWall()       const {return mask | WALL;}
-    bool IsHost()       const {return mask | HOST_MASK;}
+    bool IsWall()       const {return mask & WALL;}
+    bool IsHost()       const {return mask & HOST_MASK;}
 
-    bool IsFriendly()   const {return mask | FRIENDLY_MASK;}
-    bool IsEnemy()      const {return mask | ENEMY_MASK;}
+    bool IsFriendly()   const {return mask & FRIENDLY_MASK;}
+    bool IsEnemy()      const {return mask & ENEMY_MASK;}
 
     bool IsNeutral()    const {return !IsFriendly() && !IsEnemy();}
 };
 
 struct Map {
-    Tile map[kNumTiles][kNumTiles];
+    Tile tiles[kNumTiles][kNumTiles];
 };

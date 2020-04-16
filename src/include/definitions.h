@@ -79,8 +79,18 @@ extern volatile uint8_t has_bonk_interrupt;
 extern volatile uint8_t has_request_puzzle_interrupt;
 extern volatile uint8_t has_respawn_interrupt;
 
+#include <math.h>
+
 struct Point {
     //pixel values. Signed to be more convenient
     //for math where intermediate results may be negative.
     int x, y;
+
+    float DistanceTo(const Point &other) {
+        return sqrtf((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
+    }
+
+    bool operator==(const Point &other) const {
+        return x == other.x && y == other.y;
+    }
 };

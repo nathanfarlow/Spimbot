@@ -1,16 +1,99 @@
 #include "util/pathfinder.h"
 
+#include "definitions.h"
+
+//https://github.com/OneLoneCoder/videos/blob/master/OneLoneCoder_PathFinding_AStar.cpp
 Queue<Point> Pathfinder::FindPath(Point from, Point to) {
+
     Queue<Point> path;
-    PriorityQueue<int, 43> test;
 
-    test.enqueue(1);
-    test.enqueue(5);
-    test.enqueue(2);
-    test.enqueue(15);
+    if(from == to) {
+        path.enqueue(to);
+        return path;
+    }
 
-    printf("THIS IS IT: %d\n", test.front());
-    printf("THIS IS IT: %d\n", test.pop());
+    for(auto i = 0; i < kNumTiles; i++) {
+        for(auto j = 0; j < kNumTiles; j++) {
+            nodes_[i][j] = Node({j, i});
+        }
+    }
+
+    auto *end = &nodes_[to.y][to.x];
+
+    //Initialize current with start info
+    auto *current = &nodes_[from.y][from.x];
+    current->local_goal = 0;
+    current->global_goal = current->Heuristic(*end);
+
+    //Because we can't use lambdas rip
+    class NodeComparator : public PriorityQueue<Node*, kNumTiles * kNumTiles>::Comparator {
+    public:
+        bool HigherPriority(Node* const &a, Node* const &b) override {
+            return *a < *b;
+        }
+    };
+
+    NodeComparator comparator;
+
+    PriorityQueue<Node*, kNumTiles * kNumTiles> to_visit(&comparator);
+
+    to_visit.enqueue(current);
+    
+    while(!to_visit.empty() && current != end) {
+
+        while(!to_visit.empty() && to_visit.front()->visited)
+            to_visit.pop();
+
+        if(to_visit.empty())
+            break;
+
+        current = to_visit.front();
+        current->visited = true;
+
+        constexpr size_t kNumNeighbors = 8;
+
+        Node* neighbors[kNumNeighbors] = {nullptr};
+
+        const auto x = current->point.x;
+        const auto y = current->point.y;
+
+        neighbors[0] = y > 0                                    ? &nodes_[y - 1][x] : nullptr;
+        neighbors[1] = x > 0                                    ? &nodes_[y][x - 1] : nullptr;
+        neighbors[2] = y < kNumTiles - 1                        ? &nodes_[y + 1][x] : nullptr;
+        neighbors[3] = x < kNumTiles - 1                        ? &nodes_[y][x + 1] : nullptr;
+        neighbors[4] = y > 0 && x > 0                           ? &nodes_[y - 1][x - 1] : nullptr;
+        neighbors[5] = y > 0 && x < kNumTiles - 1               ? &nodes_[y - 1][x + 1] : nullptr;
+        neighbors[6] = y < kNumTiles - 1 && x > 0               ? &nodes_[y + 1][x - 1] : nullptr;
+        neighbors[7] = y < kNumTiles - 1 && x < kNumTiles - 1   ? &nodes_[y + 1][x + 1] : nullptr;
+
+        for(int i = 0; i < kNumNeighbors; i++) {
+            auto neighbor = neighbors[i];
+
+            //Neighbor does not exist in this direction
+            if(neighbor == nullptr)
+                continue;
+
+            if(!neighbor->visited && map_.tiles[neighbor->point.y][neighbor->point.x].mask != 1) {
+                to_visit.enqueue(neighbor);
+            }
+
+            float possibly_lower_goal = current->local_goal + current->Heuristic(*neighbor);
+
+            if(possibly_lower_goal < neighbor->local_goal) {
+                neighbor->parent = current;
+                neighbor->local_goal = possibly_lower_goal;
+                neighbor->global_goal = neighbor->local_goal + neighbor->Heuristic(*end);
+            }
+
+        }
+
+    }
+
+    current = end;
+    while(current != nullptr) {
+        path.enqueue(current->point);
+        current = current->parent;
+    }
 
     return path;
 }

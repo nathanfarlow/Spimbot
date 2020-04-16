@@ -52,8 +52,18 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
     }
 
     if(first_run) {
-        pathfinder_.FindPath({2, 2}, {2, 2});
-        intents_.enqueue(new LineMoveIntent(this, TileToPixels(1, 1), kMaxVelocity));
+        auto result = pathfinder_.FindPath({0, 0}, {10, 14});
+        while(!result.empty()) {
+            auto point = result.pop_back();
+            intents_.enqueue(new LineMoveIntent(this, TileToPixels(point.x, point.y), kMaxVelocity));
+        }
+        
+        auto other = pathfinder_.FindPath({10, 14}, {38, 5});
+        while(!other.empty()) {
+            auto point = other.pop_back();
+            intents_.enqueue(new LineMoveIntent(this, TileToPixels(point.x, point.y), kMaxVelocity));
+        }
+        
     }
 
     //If we finished the previous batch of intents, start a new one
@@ -101,7 +111,7 @@ void Controller::OnTimer(bool first_run) {
                 if(duration < kMinCycles) {
                     //Just wait for it to terminate synchronously and call ourselves as if there was an interrupt
                     sleep(duration - current->get_start() + *TIMER);
-                    OnTimer(first_run);
+                    OnTimer(false);
                 } else {
                     //The approximate number of instructions it takes to handle the timer interrupt
                     //So we can call Stop() on the async intent as accurately as possible

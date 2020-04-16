@@ -25,11 +25,20 @@ public:
 //Min heap
 template <typename T, size_t MaxSize>
 class PriorityQueue : public Queue<T> {
+public:
+    class Comparator {
+    public:
+        //If a has higher priority than b
+        virtual bool HigherPriority(const T &a, const T &b) = 0;
+    };
+
 private:
 
     static constexpr size_t kRoot = 1;
 
     ArrayList<T, MaxSize + 1> elems_;
+
+    Comparator *comparator_;
 
     void HeapifyUp(size_t current);
     void HeapifyDown(size_t current);
@@ -42,9 +51,6 @@ private:
     bool HasLeft(size_t current)        {return 2 * current < elems_.size();}
     bool HasRight(size_t current)       {return 2 * current + 1 < elems_.size();}
 
-    //If a has higher priority than b
-    bool HigherPriority(T a, T b)       {return a < b;}
-
     void swap(T &a, T &b) {
         auto temp = a;
         a = b;
@@ -52,7 +58,8 @@ private:
     }
 
 public:
-    PriorityQueue() {clear();}
+
+    PriorityQueue(Comparator *comparator) : comparator_(comparator) {clear();}
 
     void enqueue(const T& value) override;
     T& front() override;

@@ -34,7 +34,7 @@ void PriorityQueue<T, MaxSize>::HeapifyUp(size_t current) {
 
     const auto parent = Parent(current);
 
-    if(HigherPriority(elems_[current], elems_[parent])) {
+    if(comparator_->HigherPriority(elems_[current], elems_[parent])) {
         swap(elems_[current], elems_[parent]);
         HeapifyUp(parent);
     }
@@ -50,9 +50,9 @@ void PriorityQueue<T, MaxSize>::HeapifyDown(size_t current) {
     auto max = left;
 
     if(HasRight(current))
-        max = HigherPriority(elems_[left], elems_[right]) ? left : right;
+        max = comparator_->HigherPriority(elems_[left], elems_[right]) ? left : right;
 
-    if(HigherPriority(elems_[max], elems_[current])) {
+    if(comparator_->HigherPriority(elems_[max], elems_[current])) {
         swap(elems_[current], elems_[max]);
         HeapifyDown(max);
     }

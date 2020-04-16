@@ -16,6 +16,7 @@ void Queue<T>::clear() {
     }
 
     head_ = nullptr;
+    tail_ = nullptr;
     size_ = 0;
 }
 
@@ -25,8 +26,10 @@ void Queue<T>::enqueue(const T &value) {
         head_ = new Node(value);
         tail_ = head_;
     } else {
-        tail_->next = new Node(value);
-        tail_ = tail_->next;
+        auto new_tail = new Node(value);
+        tail_->next = new_tail;
+        new_tail->prev = tail_;
+        tail_ = new_tail;
     }
     
     ++size_;
@@ -38,12 +41,38 @@ T& Queue<T>::front() {
 }
 
 template <typename T>
+T& Queue<T>::back() {
+    return tail_->data;
+}
+
+template <typename T>
 T Queue<T>::pop() {
-    auto &ret = head_->data;
+    const auto ret = head_->data;
     auto new_head = head_->next;
+
+    if(new_head != nullptr) {
+        new_head->prev = nullptr;
+    }
 
     delete head_;
     head_ = new_head;
+
+    --size_;
+
+    return ret;
+}
+
+template <typename T>
+T Queue<T>::pop_back() {
+    if(size() == 1)
+        return pop();
+
+    const auto ret = tail_->data;
+    auto new_tail = tail_->prev;
+    new_tail->next = nullptr;
+
+    delete tail_;
+    tail_ = new_tail;
 
     --size_;
 

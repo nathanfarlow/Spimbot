@@ -7,9 +7,9 @@ class Queue {
 protected:
     struct Node {
         T data;
-        Node *next;
+        Node *next, *prev;
 
-        Node(T data) : data(data), next(nullptr) {}
+        Node(T data) : data(data), next(nullptr), prev(nullptr) {}
     };
 
     Node *head_ = nullptr, *tail_ = nullptr;
@@ -21,7 +21,10 @@ public:
 
     virtual void enqueue(const T& value);
     virtual T& front();
+    virtual T& back();
+
     virtual T pop();
+    virtual T pop_back();
 
     virtual void clear();
 
