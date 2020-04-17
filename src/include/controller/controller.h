@@ -5,7 +5,7 @@
 #include "util/list/list.h"
 #include "intent.h"
 
-#include "util/pathfinder.h"
+#include "pathfinder.h"
 
 constexpr unsigned kMaxIntents = 512;
 
@@ -16,7 +16,7 @@ private:
 
     List<Intent*> intents_;
 
-    Pathfinder pathfinder_;
+    AStar pathfinder_;
 
     void Strategize(bool first_run, bool is_resuming_async);
 

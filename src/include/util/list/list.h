@@ -3,13 +3,34 @@
 #include <stddef.h>
 
 template <typename T>
-class List {
+class AbstractList {
+public:
+    virtual ~AbstractList() = default;
+
+    virtual void push_front(const T& value) = 0;
+    virtual void push_back(const T& value) = 0;
+
+    virtual T& front() = 0;
+    virtual T& back() = 0;
+
+    virtual T pop_front() = 0;
+    virtual T pop_back() = 0;
+
+    virtual void clear() = 0;
+
+    virtual size_t size() const = 0;
+
+    virtual bool empty() const {return size() == 0;}
+};
+
+template <typename T>
+class List : public AbstractList<T> {
 protected:
     struct Node {
         T data;
         Node *next, *prev;
 
-        Node(T data) : data(data), next(nullptr), prev(nullptr) {}
+        explicit Node(T data) : data(data), next(nullptr), prev(nullptr) {}
     };
 
     Node *head_ = nullptr, *tail_ = nullptr;
@@ -19,18 +40,18 @@ public:
 
     virtual ~List();
 
-    virtual void push_front(const T& value);
-    virtual T& front();
-    virtual T& back();
+    void push_front(const T& value) override;
+    void push_back(const T& value) override;
 
-    virtual T pop_front();
-    virtual T pop_back();
+    T& front() override;
+    T& back() override;
 
-    virtual void clear();
+    T pop_front() override;
+    T pop_back() override;
 
-    virtual size_t size() const {return size_;}
+    void clear() override;
 
-    virtual bool empty()  const {return size() == 0;}
+    size_t size() const override {return size_;};
 };
 
 #include "list.hpp"

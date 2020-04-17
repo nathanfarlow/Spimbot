@@ -1,4 +1,3 @@
-#pragma once
 
 template <typename T>
 List<T>::~List() {
@@ -22,7 +21,20 @@ void List<T>::clear() {
 
 template <typename T>
 void List<T>::push_front(const T &value) {
-    if(empty()) {
+    auto old_head = head_;
+    head_ = new Node(value);
+
+    if(old_head != nullptr) {
+        old_head->prev = head_;
+        head_->next = old_head;
+    }
+
+    ++size_;
+}
+
+template <typename T>
+void List<T>::push_back(const T &value) {
+    if(List<T>::empty()) {
         head_ = new Node(value);
         tail_ = head_;
     } else {

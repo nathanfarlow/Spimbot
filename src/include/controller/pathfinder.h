@@ -9,8 +9,16 @@
 #include <math.h>
 
 class Pathfinder {
+protected:
+    Map map_;
+public:
+    explicit Pathfinder(const Map &map) : map_(map) {}
+    virtual List<Point> FindPath(const Point &from, const Point &to) = 0;
+    virtual ~Pathfinder() = default;
+};
+
+class AStar : public Pathfinder {
 private:
-    static constexpr unsigned kNumNeighbors = 8;
 
     struct Node {
         Point point;
@@ -20,7 +28,7 @@ private:
 
         Node() : Node({0, 0}) {}
 
-        Node(Point point) : point(point) {}
+        explicit Node(Point point) : point(point) {}
 
         float Heuristic(const Node &other) {
             return point.DistanceTo(other.point);
@@ -33,23 +41,12 @@ private:
         bool operator==(const Node &b) {
             return point == b.point;
         }
-
-        void operator=(const Node &other) {
-            //I have no idea why we have to write this explicitly.
-            point = other.point;
-            global_goal = other.global_goal;
-            local_goal = other.local_goal;
-            parent = other.parent;
-            visited = other.visited;
-        }
     };
 
-    Map map_;
     Node nodes_[kNumTiles][kNumTiles];
 
 public:
-    Pathfinder(Map map) : map_(map) {}
+    explicit AStar(Map map) : Pathfinder(map) {}
 
-    List<Point> FindPath(Point from, Point to);
-
+    List<Point> FindPath(const Point &from, const Point &to) override;
 };

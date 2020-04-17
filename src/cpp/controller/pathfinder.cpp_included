@@ -1,14 +1,14 @@
-#include "util/pathfinder.h"
+#include "controller/pathfinder.h"
 
 #include "definitions.h"
 
 //https://github.com/OneLoneCoder/videos/blob/master/OneLoneCoder_PathFinding_AStar.cpp
-List<Point> Pathfinder::FindPath(Point from, Point to) {
+List<Point> AStar::FindPath(const Point &from, const Point &to) {
 
     List<Point> path;
 
     if(from == to) {
-        path.push_front(to);
+        path.push_back(to);
         return path;
     }
 
@@ -26,7 +26,7 @@ List<Point> Pathfinder::FindPath(Point from, Point to) {
     current->global_goal = current->Heuristic(*end);
 
     //Because we can't use lambdas rip
-    class NodeComparator : public PriorityQueue<Node*, kNumTiles * kNumTiles>::Comparator {
+    class NodeComparator : public PriorityQueue<Node*>::Comparator {
     public:
         bool HigherPriority(Node* const &a, Node* const &b) override {
             return *a < *b;
@@ -35,7 +35,7 @@ List<Point> Pathfinder::FindPath(Point from, Point to) {
 
     NodeComparator comparator;
 
-    PriorityQueue<Node*, kNumTiles * kNumTiles> to_visit(&comparator);
+    PriorityQueue<Node*> to_visit(&comparator);
 
     to_visit.push(current);
     
@@ -52,7 +52,7 @@ List<Point> Pathfinder::FindPath(Point from, Point to) {
 
         constexpr size_t kNumNeighbors = 8;
 
-        Node* neighbors[kNumNeighbors] = {nullptr};
+        Node* neighbors[kNumNeighbors];
 
         const auto x = current->point.x;
         const auto y = current->point.y;
@@ -66,9 +66,7 @@ List<Point> Pathfinder::FindPath(Point from, Point to) {
         neighbors[6] = y < kNumTiles - 1 && x > 0               ? &nodes_[y + 1][x - 1] : nullptr;
         neighbors[7] = y < kNumTiles - 1 && x < kNumTiles - 1   ? &nodes_[y + 1][x + 1] : nullptr;
 
-        for(int i = 0; i < kNumNeighbors; i++) {
-            auto neighbor = neighbors[i];
-
+        for(auto neighbor : neighbors) {
             //Neighbor does not exist in this direction
             if(neighbor == nullptr)
                 continue;

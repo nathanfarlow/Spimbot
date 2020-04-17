@@ -1,29 +1,8 @@
 #pragma once
 
-#include "list.h"
+#include "arraylist.h"
 
-template <typename T, size_t MaxSize>
-class ArrayList {
-private:
-    T arr_[MaxSize];
-    size_t size_ = 0;
-
-public:
-    void push_back(const T &elem) {arr_[size_++] = elem;}
-    void pop_back() {if(size_ == 0) return; --size_;}
-
-    T& front()      {return arr_[0];}
-    T& back()       {return arr_[size_ - 1];}
-
-    void clear()    {size_ = 0;}
-
-    T& operator[](size_t i) {return arr_[i];}
-
-    size_t size() const {return size_;}
-};
-
-//Min heap
-template <typename T, size_t MaxSize>
+template <typename T>
 class PriorityQueue {
 public:
     class Comparator {
@@ -36,14 +15,12 @@ private:
 
     static constexpr size_t kRoot = 1;
 
-    ArrayList<T, MaxSize + 1> elems_;
+    ArrayList<T> elems_;
 
     Comparator *comparator_;
 
     void HeapifyUp(size_t current);
     void HeapifyDown(size_t current);
-
-    size_t HighestChild(size_t current);
 
     size_t Parent(size_t current)       {return current / 2;}
     size_t RightChild(size_t current)   {return 2 * current + 1;}
@@ -59,7 +36,7 @@ private:
 
 public:
 
-    PriorityQueue(Comparator *comparator) : comparator_(comparator) {clear();}
+    explicit PriorityQueue(Comparator *comparator) : comparator_(comparator) {clear();}
 
     void push(const T& value);
     T& front();

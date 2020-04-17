@@ -1,35 +1,34 @@
 
-template <typename T, size_t MaxSize>
-void PriorityQueue<T, MaxSize>::push(const T& value) {
+template <typename T>
+void PriorityQueue<T>::push(const T& value) {
     elems_.push_back(value);
     HeapifyUp(elems_.size() - 1);
 }
 
-template <typename T, size_t MaxSize>
-T& PriorityQueue<T, MaxSize>::front() {
+template <typename T>
+T& PriorityQueue<T>::front() {
     return elems_[kRoot];
 }
 
-template <typename T, size_t MaxSize>
-T PriorityQueue<T, MaxSize>::pop() {
+template <typename T>
+T PriorityQueue<T>::pop() {
     auto ret = front();
 
-    elems_[kRoot] = elems_.back();
-    elems_.pop_back();
+    elems_[kRoot] = elems_.pop_back();
 
     HeapifyDown(kRoot);
 
     return ret;
 }
 
-template <typename T, size_t MaxSize>
-void PriorityQueue<T, MaxSize>::clear() {
+template <typename T>
+void PriorityQueue<T>::clear() {
     elems_.clear();
     elems_.push_back(T());
 }
 
-template <typename T, size_t MaxSize>
-void PriorityQueue<T, MaxSize>::HeapifyUp(size_t current) {
+template <typename T>
+void PriorityQueue<T>::HeapifyUp(size_t current) {
     if(current == kRoot) return;
 
     const auto parent = Parent(current);
@@ -40,8 +39,8 @@ void PriorityQueue<T, MaxSize>::HeapifyUp(size_t current) {
     }
 }
 
-template <typename T, size_t MaxSize>
-void PriorityQueue<T, MaxSize>::HeapifyDown(size_t current) {
+template <typename T>
+void PriorityQueue<T>::HeapifyDown(size_t current) {
     if(!HasLeft(current)) return;
     
     const auto left = LeftChild(current);

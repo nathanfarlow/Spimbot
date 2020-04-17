@@ -55,16 +55,16 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
     }
 
     if(first_run) {
-        auto result = pathfinder_.FindPath({0, 0}, {20, 38});
+        auto result = pathfinder_.FindPath({0, 0}, {38, 38});
         while(!result.empty()) {
-            auto point = result.pop_back();
-            intents_.push_front(new LineMoveIntent(this, TileToPixels(point.x, point.y), kMaxVelocity));
+            auto point = result.pop_front();
+            intents_.push_back(new LineMoveIntent(this, TileToPixels(point.x, point.y), kMaxVelocity));
         }
     }
 
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
-        intents_.push_front(new WaitForPuzzleIntent(this));
+        intents_.push_back(new WaitForPuzzleIntent(this));
     }
 }
 
