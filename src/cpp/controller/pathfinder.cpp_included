@@ -3,12 +3,12 @@
 #include "definitions.h"
 
 //https://github.com/OneLoneCoder/videos/blob/master/OneLoneCoder_PathFinding_AStar.cpp
-Queue<Point> Pathfinder::FindPath(Point from, Point to) {
+List<Point> Pathfinder::FindPath(Point from, Point to) {
 
-    Queue<Point> path;
+    List<Point> path;
 
     if(from == to) {
-        path.enqueue(to);
+        path.push_front(to);
         return path;
     }
 
@@ -37,7 +37,7 @@ Queue<Point> Pathfinder::FindPath(Point from, Point to) {
 
     PriorityQueue<Node*, kNumTiles * kNumTiles> to_visit(&comparator);
 
-    to_visit.enqueue(current);
+    to_visit.push(current);
     
     while(!to_visit.empty() && current != end) {
 
@@ -74,7 +74,7 @@ Queue<Point> Pathfinder::FindPath(Point from, Point to) {
                 continue;
 
             if(!neighbor->visited && map_.tiles[neighbor->point.y][neighbor->point.x].mask != 1) {
-                to_visit.enqueue(neighbor);
+                to_visit.push(neighbor);
             }
 
             float possibly_lower_goal = current->local_goal + current->Heuristic(*neighbor);
@@ -91,7 +91,7 @@ Queue<Point> Pathfinder::FindPath(Point from, Point to) {
 
     current = end;
     while(current != nullptr) {
-        path.enqueue(current->point);
+        path.push_front(current->point);
         current = current->parent;
     }
 

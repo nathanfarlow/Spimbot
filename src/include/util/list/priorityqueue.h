@@ -1,6 +1,6 @@
 #pragma once
 
-#include "queue.h"
+#include "list.h"
 
 template <typename T, size_t MaxSize>
 class ArrayList {
@@ -24,7 +24,7 @@ public:
 
 //Min heap
 template <typename T, size_t MaxSize>
-class PriorityQueue : public Queue<T> {
+class PriorityQueue {
 public:
     class Comparator {
     public:
@@ -61,13 +61,14 @@ public:
 
     PriorityQueue(Comparator *comparator) : comparator_(comparator) {clear();}
 
-    void enqueue(const T& value) override;
-    T& front() override;
-    T pop() override;
+    void push(const T& value);
+    T& front();
+    T pop();
 
-    void clear() override;
+    void clear();
 
-    size_t size() const override {return elems_.size();}
+    size_t size() const {return elems_.size();}
+    bool empty()  const {return size() == 0;}
 };
 
 #include "priorityqueue.hpp"

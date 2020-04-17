@@ -5,6 +5,9 @@
 #include "definitions.h"
 #include "util/util.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+
 AbstractController *AbstractController::global;
 
 void Controller::Start() {
@@ -40,7 +43,7 @@ inline Point TileToPixels(int x, int y) {
     return {x * kTileSize + kTileSize / 2, y * kTileSize + kTileSize / 2};
 }
 
-//Populate the intent queue
+//Populate the intent list
 void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
     if(is_resuming_async) {
@@ -48,27 +51,20 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         //In the future we can check if it was interrupted
         //by collision or respawn but for now just remove it
         //Check with intents_.front()->WasInterrupted()
-        delete intents_.pop();
+        delete intents_.pop_front();
     }
 
     if(first_run) {
-        auto result = pathfinder_.FindPath({0, 0}, {10, 14});
+        auto result = pathfinder_.FindPath({0, 0}, {20, 38});
         while(!result.empty()) {
             auto point = result.pop_back();
-            intents_.enqueue(new LineMoveIntent(this, TileToPixels(point.x, point.y), kMaxVelocity));
+            intents_.push_front(new LineMoveIntent(this, TileToPixels(point.x, point.y), kMaxVelocity));
         }
-        
-        auto other = pathfinder_.FindPath({10, 14}, {38, 5});
-        while(!other.empty()) {
-            auto point = other.pop_back();
-            intents_.enqueue(new LineMoveIntent(this, TileToPixels(point.x, point.y), kMaxVelocity));
-        }
-        
     }
 
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
-        intents_.enqueue(new WaitForPuzzleIntent(this));
+        intents_.push_front(new WaitForPuzzleIntent(this));
     }
 }
 
@@ -90,11 +86,11 @@ void Controller::OnTimer(bool first_run) {
 
     bool first_loop = true;
     while(true) {
-        //Populate the intent queue
+        //Populate the intent list
         Strategize(first_run, first_loop && !first_run);
         first_loop = false;
 
-        //Consume the intent queue
+        //Consume the intent list
         while(!intents_.empty()) {
             auto current = intents_.front();
 
@@ -124,7 +120,7 @@ void Controller::OnTimer(bool first_run) {
             } else {
                 //Otherwise the logic already terminated in Start(),
                 //so remove it and go to the next one.
-                delete intents_.pop();
+                delete intents_.pop_front();
             }
         }
     }
@@ -165,3 +161,5 @@ void timer_interrupt_handler() {
 }
 
 }
+
+#pragma clang diagnostic pop

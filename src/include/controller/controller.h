@@ -2,7 +2,7 @@
 
 #include "abstractcontroller.h"
 #include "puzzle/puzzlemanager.h"
-#include "util/queue/queue.h"
+#include "util/list/list.h"
 #include "intent.h"
 
 #include "util/pathfinder.h"
@@ -14,7 +14,7 @@ private:
 
     PuzzleManager puzzle_manager_;
 
-    Queue<Intent*> intents_;
+    List<Intent*> intents_;
 
     Pathfinder pathfinder_;
 

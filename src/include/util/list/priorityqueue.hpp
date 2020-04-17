@@ -1,6 +1,6 @@
 
 template <typename T, size_t MaxSize>
-void PriorityQueue<T, MaxSize>::enqueue(const T& value) {
+void PriorityQueue<T, MaxSize>::push(const T& value) {
     elems_.push_back(value);
     HeapifyUp(elems_.size() - 1);
 }

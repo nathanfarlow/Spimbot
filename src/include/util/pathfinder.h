@@ -3,8 +3,8 @@
 #include "definitions.h"
 #include "spimbot/map.h"
 
-#include "util/queue/queue.h"
-#include "util/queue/priorityqueue.h"
+#include "util/list/list.h"
+#include "util/list/priorityqueue.h"
 
 #include <math.h>
 
@@ -50,6 +50,6 @@ private:
 public:
     Pathfinder(Map map) : map_(map) {}
 
-    Queue<Point> FindPath(Point from, Point to);
+    List<Point> FindPath(Point from, Point to);
 
 };

@@ -1,12 +1,12 @@
 #pragma once
 
 template <typename T>
-Queue<T>::~Queue() {
+List<T>::~List() {
     clear();
 }
 
 template <typename T>
-void Queue<T>::clear() {
+void List<T>::clear() {
     auto current = head_;
 
     while(current != nullptr) {
@@ -21,7 +21,7 @@ void Queue<T>::clear() {
 }
 
 template <typename T>
-void Queue<T>::enqueue(const T &value) {
+void List<T>::push_front(const T &value) {
     if(empty()) {
         head_ = new Node(value);
         tail_ = head_;
@@ -36,17 +36,17 @@ void Queue<T>::enqueue(const T &value) {
 }
 
 template <typename T>
-T& Queue<T>::front() {
+T& List<T>::front() {
     return head_->data;
 }
 
 template <typename T>
-T& Queue<T>::back() {
+T& List<T>::back() {
     return tail_->data;
 }
 
 template <typename T>
-T Queue<T>::pop() {
+T List<T>::pop_front() {
     const auto ret = head_->data;
     auto new_head = head_->next;
 
@@ -63,9 +63,9 @@ T Queue<T>::pop() {
 }
 
 template <typename T>
-T Queue<T>::pop_back() {
+T List<T>::pop_back() {
     if(size() == 1)
-        return pop();
+        return pop_front();
 
     const auto ret = tail_->data;
     auto new_tail = tail_->prev;

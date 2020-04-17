@@ -3,7 +3,7 @@
 #include <stddef.h>
 
 template <typename T>
-class Queue {
+class List {
 protected:
     struct Node {
         T data;
@@ -17,13 +17,13 @@ protected:
 
 public:
 
-    virtual ~Queue();
+    virtual ~List();
 
-    virtual void enqueue(const T& value);
+    virtual void push_front(const T& value);
     virtual T& front();
     virtual T& back();
 
-    virtual T pop();
+    virtual T pop_front();
     virtual T pop_back();
 
     virtual void clear();
@@ -33,4 +33,4 @@ public:
     virtual bool empty()  const {return size() == 0;}
 };
 
-#include "queue.hpp"
+#include "list.hpp"
