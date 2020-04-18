@@ -99,15 +99,12 @@ List<Point> AStar::FindPath(const Point &from_pixel, const Point &to_pixel) {
         current = current->parent;
     }
 
-    if(TileToPixels(path.front()) == from_pixel)
-        path.pop_front();
-
     //Convert from tile coordinates to pixel coordinates and remove unnecessary nodes
     //that are in a line
-    return OptimizeAndConvert(path, to_pixel);
+    return OptimizeAndConvert(path, from_pixel, to_pixel);
 }
 
-List<Point> AStar::OptimizeAndConvert(List<Point> &path, const Point &final_destination) {
+List<Point> AStar::OptimizeAndConvert(List<Point> &path, const Point &start_pixel, const Point &final_destination) {
 
     List<Point> optimized;
 
@@ -153,10 +150,11 @@ List<Point> AStar::OptimizeAndConvert(List<Point> &path, const Point &final_dest
     }
 
     //Add the first move
-    optimized.push_front(TileToPixels(path.pop_back()));
+    if(start_pixel != path.back())
+        optimized.push_front(TileToPixels(path.pop_back()));
 
     //Add the final destination
-    if(!(optimized.back() == final_destination))
+    if(optimized.back() != final_destination)
         optimized.push_back(final_destination);
 
     return optimized;

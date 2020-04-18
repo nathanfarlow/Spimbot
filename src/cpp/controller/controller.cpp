@@ -84,7 +84,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         while(!result.empty()) {
             auto point = result.pop_front();
             //printf("(%d, %d)\n", point.x, point.y);
-            intents_.push_back(new LineMoveIntent(this, point, 6));
+            intents_.push_back(new LineMoveIntent(this, point, kMaxVel));
         }
     }
 }

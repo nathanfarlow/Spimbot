@@ -40,7 +40,7 @@ private:
 
     Node nodes_[kNumTiles][kNumTiles];
 
-    List<Point> OptimizeAndConvert(List<Point> &path, const Point &final_destination);
+    List<Point> OptimizeAndConvert(List<Point> &path, const Point &start_pixel, const Point &final_destination);
 
 public:
     explicit AStar(Map map) : Pathfinder(map) {}
