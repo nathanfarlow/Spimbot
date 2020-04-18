@@ -118,26 +118,30 @@ List<Point> AStar::OptimizeAndConvert(List<Point> &path, const Point &final_dest
         auto current = path.pop_back();
         auto prev_move = path.back();
 
-        //These variables exist if we try to pass by a wall diagonally.
-        //We have to change our position ever so slightly to avoid colliding
-        //with the one pixel corner of the wall.
-        const Point wall = PotentialWallPass(prev_move, current);
-        const bool did_pass_wall = wall.x >= 0;
-
-        const bool diagonal = current.x != prev_move.x && current.y != prev_move.y;
         const int slope = current.x - prev_move.x == 0 ? 0
                 : (current.y - prev_move.y) / (current.x - prev_move.x);
 
-        //Avoid collision with corner of wall
-        if(did_pass_wall) {
-            auto new_current = TileToPixels(current);
+        const Point blocks[2] = {
+                {current.x, prev_move.y},
+                {prev_move.x, current.y}
+        };
 
-            new_current.x += kTileSize / 2 * (prev_move.x - wall.x);
-            new_current.y += kTileSize / 2 * (prev_move.y - wall.y);
-
-            optimized.push_front(new_current);
+        int wall_index = -1;
+        for(int i = 0; i < 2; i++) {
+            const auto block = blocks[i];
+            if(block.x >= 0 && block.y >= 0 && block.x < kNumTiles && block.y < kNumTiles
+               && map_.tiles[block.y][block.x].IsWall())
+                wall_index = i;
         }
 
+        const bool did_pass_wall = wall_index >= 0;
+
+        //Avoid collision with corner of wall by interpolating
+        //adjacent movement instead of diagonal
+        if(did_pass_wall) {
+            optimized.push_front(TileToPixels(current));
+            optimized.push_front(TileToPixels(blocks[1 - wall_index]));
+        }
         //If we are moving in the same direction, don't add the point
         //to save on time solving puzzles
         else if(prev_was_adj_pass || slope != prev_slope) {
@@ -156,22 +160,4 @@ List<Point> AStar::OptimizeAndConvert(List<Point> &path, const Point &final_dest
         optimized.push_back(final_destination);
 
     return optimized;
-}
-
-Point AStar::PotentialWallPass(const Point &from, const Point &to) {
-
-    //The walls we may be passing. From the spimbot
-    //spec this will never be both.
-    const Point blocks[2] = {
-            {to.x, from.y},
-            {from.x, to.y}
-    };
-
-    for(const auto &block : blocks) {
-        if(block.x >= 0 && block.y >= 0 && block.x < kNumTiles && block.y < kNumTiles
-            && map_.tiles[block.y][block.x].IsWall())
-            return block;
-    }
-
-    return {-1, -1};
 }

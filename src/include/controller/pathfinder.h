@@ -40,7 +40,6 @@ private:
 
     Node nodes_[kNumTiles][kNumTiles];
 
-    Point PotentialWallPass(const Point &from, const Point &to);
     List<Point> OptimizeAndConvert(List<Point> &path, const Point &final_destination);
 
 public:

@@ -47,6 +47,12 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         if(finished->WasInterrupted()) {
             //Clear the intent queue and regenerate positions
             intents_.clear();
+
+            if(bot_.IsRespawn()) {
+                printf("We got shot\n");
+            } else if(bot_.IsBonked()) {
+                printf("We got bonked during movement\n");
+            }
         }
 
         delete finished;
@@ -59,10 +65,11 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         const int coords[] = {1, 38, 36, 13, 11, 20, 9, 3, 20, 13, 33, 14, 10, 29, 1, 20, 7, 29, 0, 38, 0, 12, 7, 36, 15, 5, 16, 11, 24, 12, 9, 6, 11, 26, 17, 30, 9, 1, 10, 33, 31, 18, 10, 32, 32, 31, 34, 7, 10, 31, 26, 6, 23, 18, 22, 38, 38, 8, 9, 28, 23, 34, 5, 8, 21, 24, 23, 36, 23, 33, 17, 3, 33, 24, 16, 35, 24, 31, 4, 5, 26, 13, 10, 38, 32, 39, 34, 32, 7, 30, 4, 3, 13, 14, 8, 5, 12, 17, 35, 13, 23, 23, 24, 31, 5, 13, 21, 8, 29, 13, 34, 16, 36, 0, 23, 39, 2, 1, 37, 38, 6, 38, 29, 32, 4, 18, 4, 33, 11, 10, 34, 27, 17, 0, 13, 19, 19, 25, 5, 14, 31, 36, 23, 39, 10, 18, 1, 6, 17, 28, 2, 18, 32, 29, 7, 3, 7, 20, 37, 28, 22, 2, 14, 20, 21, 21, 15, 29, 39, 33, 12, 32, 20, 32, 27, 21, 3, 12, 17, 13, 18, 13, 33, 28, 39, 1, 25, 5, 10, 4, 35, 18, 24, 35, 29, 21, 0, 25, 32, 2};
 
         const Point from = bot_.get_pos();
-        Point to_tile;
-        do {
+
+        //I have no idea why, but do-while loops don't work
+        Point to_tile = {coords[__index], coords[++__index]};
+        while(bot_.get_map().tiles[to_tile.y][to_tile.x].IsWall())
             to_tile = {coords[__index], coords[++__index]};
-        } while(bot_.get_map().tiles[to_tile.y][to_tile.x].IsWall());
 
         const Point to = TileToPixels(to_tile);
 
@@ -76,7 +83,8 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
         while(!result.empty()) {
             auto point = result.pop_front();
-            intents_.push_back(new LineMoveIntent(this, point, kMaxVel));
+            //printf("(%d, %d)\n", point.x, point.y);
+            intents_.push_back(new LineMoveIntent(this, point, 6));
         }
     }
 }
