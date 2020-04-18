@@ -41,9 +41,13 @@ private:
         bool operator==(const Node &b) {
             return point == b.point;
         }
+
     };
 
     Node nodes_[kNumTiles][kNumTiles];
+
+    Point PotentialWallPass(const Point &from, const Point &to);
+    List<Point> OptimizeAndConvert(List<Point> &path);
 
 public:
     explicit AStar(Map map) : Pathfinder(map) {}

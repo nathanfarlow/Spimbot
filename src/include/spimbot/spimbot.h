@@ -4,9 +4,6 @@
 
 #include "map.h"
 
-constexpr unsigned kMaxVel = 10;
-constexpr unsigned kMinVel = -10;
-
 enum Orientation {
     RELATIVE = 0, ABSOLUTE = 1
 };

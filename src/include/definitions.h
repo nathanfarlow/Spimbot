@@ -66,8 +66,7 @@ struct ScoreReport {
 constexpr unsigned kCostScan = 1;
 constexpr unsigned kCostShoot = 50;
 
-constexpr int kMaxVelocity = 10;
-constexpr int kMinVelocity = -10;
+constexpr int kMaxVel = 10;
 
 constexpr int kBotRadius = 3;
 

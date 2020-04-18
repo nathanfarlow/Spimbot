@@ -17,7 +17,7 @@ public:
     static AbstractController *get_global()                 {return global;}
     static void set_global(AbstractController *controller)  {global = controller;}
 
-    AbstractController(Spimbot &bot) : bot_(bot), current_intent_(nullptr) {
+    explicit AbstractController(Spimbot &bot) : bot_(bot), current_intent_(nullptr) {
         set_global(this);
     }
 

@@ -27,6 +27,8 @@ void List<T>::push_front(const T &value) {
     if(old_head != nullptr) {
         old_head->prev = head_;
         head_->next = old_head;
+    } else {
+        tail_ = head_;
     }
 
     ++size_;
@@ -59,6 +61,9 @@ T& List<T>::back() {
 
 template <typename T>
 T List<T>::pop_front() {
+    if(List<T>::empty())
+        return T();
+
     const auto ret = head_->data;
     auto new_head = head_->next;
 
@@ -76,7 +81,7 @@ T List<T>::pop_front() {
 
 template <typename T>
 T List<T>::pop_back() {
-    if(size() == 1)
+    if(size() <= 1)
         return pop_front();
 
     const auto ret = tail_->data;

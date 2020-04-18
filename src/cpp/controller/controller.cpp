@@ -38,11 +38,6 @@ void Controller::Start() {
     
 }
 
-//Returns the pixel coordinates of the center of the tile
-inline Point TileToPixels(int x, int y) {
-    return {x * kTileSize + kTileSize / 2, y * kTileSize + kTileSize / 2};
-}
-
 //Populate the intent list
 void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
@@ -55,11 +50,14 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
     }
 
     if(first_run) {
+
         auto result = pathfinder_.FindPath({0, 0}, {38, 38});
+
         while(!result.empty()) {
             auto point = result.pop_front();
-            intents_.push_back(new LineMoveIntent(this, TileToPixels(point.x, point.y), kMaxVelocity));
+            intents_.push_back(new LineMoveIntent(this, point, 2));
         }
+
     }
 
     //If we finished the previous batch of intents, start a new one

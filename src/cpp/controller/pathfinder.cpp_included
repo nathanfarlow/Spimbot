@@ -1,6 +1,7 @@
 #include "controller/pathfinder.h"
 
 #include "definitions.h"
+#include "util/util.h"
 
 //https://github.com/OneLoneCoder/videos/blob/master/OneLoneCoder_PathFinding_AStar.cpp
 List<Point> AStar::FindPath(const Point &from, const Point &to) {
@@ -71,7 +72,7 @@ List<Point> AStar::FindPath(const Point &from, const Point &to) {
             if(neighbor == nullptr)
                 continue;
 
-            if(!neighbor->visited && map_.tiles[neighbor->point.y][neighbor->point.x].mask != 1) {
+            if(!neighbor->visited && !map_.tiles[neighbor->point.y][neighbor->point.x].IsWall()) {
                 to_visit.push(neighbor);
             }
 
@@ -87,11 +88,72 @@ List<Point> AStar::FindPath(const Point &from, const Point &to) {
 
     }
 
+
     current = end;
     while(current != nullptr) {
         path.push_front(current->point);
         current = current->parent;
     }
 
-    return path;
+    path.push_front(from);
+
+    return OptimizeAndConvert(path);
+}
+
+List<Point> AStar::OptimizeAndConvert(List<Point> &path) {
+
+    List<Point> optimized;
+
+    //Add end point
+    optimized.push_front(TileToPixels(path.pop_back()));
+
+    bool prev_was_adj_pass = false;
+    bool prev_diagonal = false;
+
+    while(!path.empty()) {
+        auto current = path.pop_back();
+        auto before = path.back();
+
+        const Point wall = PotentialWallPass(before, current);
+        const bool did_pass_wall = wall.x >= 0;
+
+        const bool diagonal = current.x != before.x && current.y != before.y;
+
+        //Avoid collision with wall
+        if(did_pass_wall) {
+            auto new_current = TileToPixels(current);
+
+            new_current.x -= 4 * (wall.x - before.x);
+            new_current.y -= 4 * (wall.y - before.y);
+
+            optimized.push_front(new_current);
+        }
+        //If we are moving in the same direction, don't add the point
+        else if(prev_was_adj_pass || (diagonal && !prev_diagonal)) {
+            optimized.push_front(TileToPixels(before));
+        }
+
+        prev_was_adj_pass = did_pass_wall;
+        prev_diagonal = diagonal;
+    }
+
+    return optimized;
+}
+
+Point AStar::PotentialWallPass(const Point &from, const Point &to) {
+
+    //The walls we may be passing. From the spimbot
+    //spec this will never be both.
+    const Point blocks[2] = {
+            {to.x, from.y},
+            {from.x, to.y}
+    };
+
+    for(const auto &block : blocks) {
+        if(block.x >= 0 && block.y >= 0 && block.x < kNumTiles && block.y < kNumTiles
+            && map_.tiles[block.y][block.x].IsWall())
+            return block;
+    }
+
+    return {-1, -1};
 }
