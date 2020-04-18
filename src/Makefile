@@ -22,7 +22,7 @@ include $(CSPIM)/tools/.makefile
 .PHONY: run debug
 
 run: clean all
-	QtSpimbot -file $(OUTFILE) -file2 ../adversary.s -tournament
+	QtSpimbot -file $(OUTFILE) -file2 ../adversary.s -run -randommap -tournament
 
 debug: clean all
 	#Without the tournament tag, we can use syscalls for printf
