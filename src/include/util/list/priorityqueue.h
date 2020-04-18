@@ -38,6 +38,8 @@ public:
 
     explicit PriorityQueue(Comparator *comparator) : comparator_(comparator) {clear();}
 
+    virtual ~PriorityQueue() = default;
+
     void push(const T& value);
     T& front();
     T pop();

@@ -13,6 +13,8 @@ protected:
     Map map_;
 public:
     explicit Pathfinder(const Map &map) : map_(map) {}
+
+    //from, to pixel coordinates. List returned is in pixel coordinates
     virtual List<Point> FindPath(const Point &from, const Point &to) = 0;
     virtual ~Pathfinder() = default;
 };
@@ -30,16 +32,8 @@ private:
 
         explicit Node(Point point) : point(point) {}
 
-        float Heuristic(const Node &other) {
-            return point.DistanceTo(other.point);
-        }
-
-        bool operator<(const Node &b) {
-            return global_goal < b.global_goal;
-        }
-
-        bool operator==(const Node &b) {
-            return point == b.point;
+        float Heuristic(const Node* const other) {
+            return point.DistanceTo(other->point);
         }
 
     };
@@ -47,7 +41,7 @@ private:
     Node nodes_[kNumTiles][kNumTiles];
 
     Point PotentialWallPass(const Point &from, const Point &to);
-    List<Point> OptimizeAndConvert(List<Point> &path);
+    List<Point> OptimizeAndConvert(List<Point> &path, const Point &final_destination);
 
 public:
     explicit AStar(Map map) : Pathfinder(map) {}

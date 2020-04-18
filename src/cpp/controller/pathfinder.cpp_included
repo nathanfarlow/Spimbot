@@ -3,16 +3,19 @@
 #include "definitions.h"
 #include "util/util.h"
 
-//https://github.com/OneLoneCoder/videos/blob/master/OneLoneCoder_PathFinding_AStar.cpp
-List<Point> AStar::FindPath(const Point &from, const Point &to) {
+List<Point> AStar::FindPath(const Point &from_pixel, const Point &to_pixel) {
 
-    List<Point> path;
+    //The tiles that correspond to the pixel coordinates
+    const Point from = {from_pixel.x / kTileSize, from_pixel.y / kTileSize};
+    const Point to = {to_pixel.x / kTileSize, to_pixel.y / kTileSize};
 
     if(from == to) {
-        path.push_back(to);
-        return path;
+        List<Point> early_ret;
+        early_ret.push_back(to_pixel);
+        return early_ret;
     }
 
+    //Initialize nodes to default values
     for(auto i = 0; i < kNumTiles; i++) {
         for(auto j = 0; j < kNumTiles; j++) {
             nodes_[i][j] = Node({j, i});
@@ -24,13 +27,13 @@ List<Point> AStar::FindPath(const Point &from, const Point &to) {
     //Initialize current with start info
     auto *current = &nodes_[from.y][from.x];
     current->local_goal = 0;
-    current->global_goal = current->Heuristic(*end);
+    current->global_goal = current->Heuristic(end);
 
     //Because we can't use lambdas rip
     class NodeComparator : public PriorityQueue<Node*>::Comparator {
     public:
         bool HigherPriority(Node* const &a, Node* const &b) override {
-            return *a < *b;
+            return a->global_goal < b->global_goal;
         }
     };
 
@@ -39,7 +42,8 @@ List<Point> AStar::FindPath(const Point &from, const Point &to) {
     PriorityQueue<Node*> to_visit(&comparator);
 
     to_visit.push(current);
-    
+
+    //Algorithm modified from https://github.com/OneLoneCoder/videos/blob/master/OneLoneCoder_PathFinding_AStar.cpp
     while(!to_visit.empty() && current != end) {
 
         while(!to_visit.empty() && to_visit.front()->visited)
@@ -51,9 +55,7 @@ List<Point> AStar::FindPath(const Point &from, const Point &to) {
         current = to_visit.front();
         current->visited = true;
 
-        constexpr size_t kNumNeighbors = 8;
-
-        Node* neighbors[kNumNeighbors];
+        Node* neighbors[8];
 
         const auto x = current->point.x;
         const auto y = current->point.y;
@@ -76,66 +78,82 @@ List<Point> AStar::FindPath(const Point &from, const Point &to) {
                 to_visit.push(neighbor);
             }
 
-            float possibly_lower_goal = current->local_goal + current->Heuristic(*neighbor);
+            float possibly_lower_goal = current->local_goal + current->Heuristic(neighbor);
 
             if(possibly_lower_goal < neighbor->local_goal) {
                 neighbor->parent = current;
                 neighbor->local_goal = possibly_lower_goal;
-                neighbor->global_goal = neighbor->local_goal + neighbor->Heuristic(*end);
+                neighbor->global_goal = neighbor->local_goal + neighbor->Heuristic(end);
             }
 
         }
 
     }
 
+    List<Point> path;
 
+    //Go back through the nodes to generate the list of tile coordinates
     current = end;
     while(current != nullptr) {
         path.push_front(current->point);
         current = current->parent;
     }
 
-    path.push_front(from);
+    if(TileToPixels(path.front()) == from_pixel)
+        path.pop_front();
 
-    return OptimizeAndConvert(path);
+    //Convert from tile coordinates to pixel coordinates and remove unnecessary nodes
+    //that are in a line
+    return OptimizeAndConvert(path, to_pixel);
 }
 
-List<Point> AStar::OptimizeAndConvert(List<Point> &path) {
+List<Point> AStar::OptimizeAndConvert(List<Point> &path, const Point &final_destination) {
 
     List<Point> optimized;
 
-    //Add end point
-    optimized.push_front(TileToPixels(path.pop_back()));
-
     bool prev_was_adj_pass = false;
-    bool prev_diagonal = false;
+    int prev_slope = INT_MAX;
 
-    while(!path.empty()) {
+    while(path.size() > 1) {
         auto current = path.pop_back();
-        auto before = path.back();
+        auto prev_move = path.back();
 
-        const Point wall = PotentialWallPass(before, current);
+        //These variables exist if we try to pass by a wall diagonally.
+        //We have to change our position ever so slightly to avoid colliding
+        //with the one pixel corner of the wall.
+        const Point wall = PotentialWallPass(prev_move, current);
         const bool did_pass_wall = wall.x >= 0;
 
-        const bool diagonal = current.x != before.x && current.y != before.y;
+        const bool diagonal = current.x != prev_move.x && current.y != prev_move.y;
+        const int slope = current.x - prev_move.x == 0 ? 0
+                : (current.y - prev_move.y) / (current.x - prev_move.x);
 
-        //Avoid collision with wall
+        //Avoid collision with corner of wall
         if(did_pass_wall) {
             auto new_current = TileToPixels(current);
 
-            new_current.x -= 4 * (wall.x - before.x);
-            new_current.y -= 4 * (wall.y - before.y);
+            new_current.x += kTileSize / 2 * (prev_move.x - wall.x);
+            new_current.y += kTileSize / 2 * (prev_move.y - wall.y);
 
             optimized.push_front(new_current);
         }
+
         //If we are moving in the same direction, don't add the point
-        else if(prev_was_adj_pass || (diagonal && !prev_diagonal)) {
-            optimized.push_front(TileToPixels(before));
+        //to save on time solving puzzles
+        else if(prev_was_adj_pass || slope != prev_slope) {
+            optimized.push_front(TileToPixels(current));
         }
 
         prev_was_adj_pass = did_pass_wall;
-        prev_diagonal = diagonal;
+        prev_slope = slope;
     }
+
+    //Add the first move
+    optimized.push_front(TileToPixels(path.pop_back()));
+
+    //Add the final destination
+    if(!(optimized.back() == final_destination))
+        optimized.push_back(final_destination);
 
     return optimized;
 }

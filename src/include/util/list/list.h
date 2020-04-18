@@ -37,8 +37,14 @@ protected:
     unsigned size_ = 0;
 
 public:
-
+    List() = default;
     virtual ~List();
+
+    List(const List<T> &other);
+    List(List<T> &&other);
+
+    List &operator=(const List<T> &other);
+    List &operator=(List<T> &&other);
 
     void push_front(const T& value) override;
     void push_back(const T& value) override;
