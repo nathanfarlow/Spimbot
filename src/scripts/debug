@@ -1,4 +1,0 @@
-#This is debug because we exclude the -tournament tag, which enables
-#syscalls so we can use printf()
-
-QtSpimbot -file ../../spimbot.s -file2 ../../adversary.s 
