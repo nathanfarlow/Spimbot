@@ -11,18 +11,20 @@ struct list_node {
 	struct list_node *next;
 };
 
-typedef struct queue_header queue;
-struct queue_header {
+typedef struct list_header list;
+struct list_header {
 	node *front;
 	node *back;
 };
 
-queue *queue_new();
+list *list_new();
 
-void enq(queue *Q, void *x);
+void push_back(list *Q, void *x);
 
-void *deq(queue *Q);
+void push_front(list *Q, void *x);
 
-void queue_free(queue *Q, void (*elem_free)(void *));
+void *pop_front(list *Q);
+
+void list_free(list *Q, void (*elem_free)(void *));
 
 #endif
