@@ -1,6 +1,7 @@
 #include "controller/gren_controller.h"
 
 #include <stdio.h>
+#include <math.h>
 
 #include "definitions.h"
 #include "spimbot/map.h"
@@ -38,7 +39,7 @@ Point GrenController::get_target() {
 	Point host_pos = host_locations_[i];
 	// Note that arena_map is in (y, x) format
 	Tile host = arena_map[host_pos.y][host_pos.x];
-	if (!host.IsFriendly) {
+	if (!host.IsFriendly()) {
 	    // Host is neutral or enemy
 	    int new_distance = distance_square(player_pos, host_pos);
 	    if (new_distance < shortest_distance && host_pos != recent_shot_pos_) {
@@ -86,6 +87,10 @@ inline Point TileToPixels(int x, int y) {
     return {x * kTileSize + kTileSize / 2, y * kTileSize + kTileSize / 2};
 }
 
+inline Point TileToPixels(Point pos) {
+    return TileToPixels(pos.x, pos.y);
+}
+
 //Populate the intent queue
 void GrenController::Strategize(bool is_resuming_async) {
 
@@ -98,11 +103,61 @@ void GrenController::Strategize(bool is_resuming_async) {
 
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
-        intents_.enqueue(new LineMoveIntent(this, TileToPixels(1, 1), kMaxVelocity));
-        intents_.enqueue(new LineMoveIntent(this, TileToPixels(38, 1), kMaxVelocity));
-        intents_.enqueue(new LineMoveIntent(this, TileToPixels(38, 38), kMaxVelocity));
-        intents_.enqueue(new LineMoveIntent(this, TileToPixels(1, 38), kMaxVelocity));
+        //intents_.enqueue(new LineMoveIntent(this, TileToPixels(1, 1), kMaxVelocity));
+	Point target_pos = get_target();
+	target_pos = TileToPixels(target_pos);
+	Point player_pos = bot_.get_pos();
+	int current_angle = bot_.get_angle();
+
+	int target_angle = get_angle(player_pos, target_pos);
+	bot_.set_angle(target_angle);
+
+	Tile scanned_tile = bot_.Scan().tile;
+	if (scanned_tile.IsHost()) {
+	    bot_.Shoot();
+	    if (scanned_tile.IsEnemy()) {
+		// Shoot enemy host twice
+		bot_.Shoot();
+	    }
+	    recent_shot_position_ = target_pos;
+	} else if (scanned_tile.IsPlayer()) {
+	    bot_.Shoot();
+	} else {
+	    int angle_sweep = 5;
+	    int travel_angle;
+
+	    while (true) {
+		travel_angle = target_angle + angle_sweep;
+		bot_.set_angle(travel_angle);
+		scanned_tile = bot_.Scan().tile;
+		if (!scanned_tile.IsWall()) {
+		    break;
+		}
+
+		travel_angle = target_angle - angle_sweep;
+		bot_.set_angle(travel_angle);
+		scanned_tile = bot_.Scan().tile;
+		if (!scanned_tile.IsWall()) {
+		    break;
+		}
+
+		angle_sweep += 5;
+	    }
+
+	    bot_.set_angle(travel_angle);
+
+	    // travel step size in this angle
+	}
     }
+}
+
+void GrenController::get_angle(Point pos, Point target) {
+    float angle = atanf((float)(target.y - pos.y) / (target.x - pos.x));
+    if (target.x < pos.x) {
+	angle += M_PI;
+    }
+
+    return roundf(angle * 180 / M_PI);
 }
 
 /*
