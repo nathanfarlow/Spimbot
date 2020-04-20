@@ -183,7 +183,7 @@ char[1] get_target() {
 
 	if (!(host & 0b0100)) {
 	    // host is neutral or enemy
-	    int new_distance = distance(player_x, player_y, host_x, host_y);
+	    int new_distance = distance_square(player_x, player_y, host_x, host_y);
 	    if (new_distance < shortest_distance) {
 		if ((target_x != shot_x) || (target_y != shot_y)) {
 		    target_x = host_locations[i][0];

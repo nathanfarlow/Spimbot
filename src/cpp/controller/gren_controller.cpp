@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <limits.h>
 
 #include "definitions.h"
 #include "spimbot/map.h"
@@ -31,7 +32,7 @@ int GrenController::distance_square(Point pos, Point target) {
 
 Point GrenController::get_target() {
     Map arena_map = bot_.get_map();
-    int shortest_distance = 0xffffffff;
+    int shortest_distance = INT_MAX;
     Point player_pos = bot_.get_pos();
     Point target_pos;
 
