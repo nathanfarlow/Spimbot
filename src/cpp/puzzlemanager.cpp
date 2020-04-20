@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "definitions.h"
+#include "controller/controller.h"
 
 extern "C" {
     //Code is in puzzle_sol.s
@@ -23,6 +24,8 @@ void PuzzleManager::Finish() {
 
     //Submit solution
     *SUBMIT_SOLUTION = &solution_;
+
+    controller_->OnSolve();
 }
 
 bool PuzzleManager::HasPuzzle() {
@@ -39,13 +42,13 @@ bool PuzzleManager::HasPuzzle() {
 void PuzzleManager::Solve() {
     solving_ = true;
 
-#ifdef DEBUG
+#ifdef PUZZLE_DEBUG
     const unsigned start = *TIMER;
 #endif
 
     solve(&puzzle_, &solution_, 0, 0);
 
-#ifdef DEBUG
+#ifdef PUZZLE_DEBUG
     const unsigned end = *TIMER;
 
     printf("Number of cycles for rows: %d cols: %d: colors: %d was %u\n",

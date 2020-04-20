@@ -36,7 +36,7 @@ struct ScoreReport {
 #define BOT_Y                   ((uint32_t*)0xffff0024)
 #define GET_OPPONENT_HINT       ((OpponentHintInfo**)0xffff00ec)
 
-#define TIMER                   ((uint32_t*)0xffff001c)
+#define TIMER                   ((int32_t*)0xffff001c)
 #define ARENA_MAP               ((Map**)0xffff00dc)
 
 #define SHOOT_UDP_PACKET        ((uint32_t*)0xffff00e0)
@@ -66,10 +66,11 @@ struct ScoreReport {
 constexpr unsigned kCostScan = 1;
 constexpr unsigned kCostShoot = 50;
 
-constexpr int kMaxVelocity = 10;
-constexpr int kMinVelocity = -10;
+constexpr int kMaxVel = 10;
 
 constexpr int kBotRadius = 3;
+
+constexpr unsigned kNumGameCycles = 1e7;
 
 //The kernel sets these to 1 when an interrupt is called and acknowledged.
 //It is the userland code's responsibility to set it back to 0.
@@ -77,17 +78,22 @@ extern volatile uint8_t has_bonk_interrupt;
 extern volatile uint8_t has_request_puzzle_interrupt;
 extern volatile uint8_t has_respawn_interrupt;
 
+#include <math.h>
+
 struct Point {
     //pixel values. Signed to be more convenient
     //for math where intermediate results may be negative.
     int x, y;
 
-    bool operator==(const Point& other)
-    {
-	return x == other.x && y == other.y;
+    float DistanceTo(const Point &other) {
+        return sqrtf((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
     }
 
-    bool operator!=(const Point& other) {
-	return !(*this == other);
+    bool operator==(const Point &other) const {
+        return x == other.x && y == other.y;
+    }
+
+    bool operator!=(const Point &other) const {
+        return !(*this == other);
     }
 };

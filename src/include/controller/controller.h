@@ -2,7 +2,10 @@
 
 #include "abstractcontroller.h"
 #include "puzzle/puzzlemanager.h"
-#include "util/queue.h"
+#include "util/list/list.h"
+#include "intent.h"
+
+#include "pathfinder.h"
 
 constexpr unsigned kMaxIntents = 512;
 
@@ -11,13 +14,21 @@ private:
 
     PuzzleManager puzzle_manager_;
 
-    Queue<Intent*> intents_;
+    List<Intent*> intents_;
 
-    void Strategize(bool is_resuming_async);
+    AStar pathfinder_;
+
+    void Strategize(bool first_run, bool is_resuming_async);
 
 public:
-    Controller(Spimbot &bot) : AbstractController(bot) {}
+    Controller(Spimbot &bot)
+        : AbstractController(bot),
+          puzzle_manager_(this),
+          pathfinder_(bot.get_map()) {}
 
     void Start() override;
-    void OnTimer() override;
+    void OnTimer(bool first_run) override;
+
+    //Called when the PuzzleManager solves a puzzle
+    void OnSolve();
 };

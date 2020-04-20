@@ -1,7 +1,5 @@
 #pragma once
 
-#include "definitions.h"
-
 //Size of tiles in pixels
 constexpr int kTileSize = 8;
 //Number of tiles on board
@@ -18,19 +16,19 @@ enum TileType {
 struct Tile {
     char mask;
 
-    bool IsGround()     {return mask == 0;}
+    bool IsGround()     const {return mask == 0;}
 
-    bool IsWall()       {return mask | WALL;}
-    bool IsHost()       {return mask | HOST_MASK;}
+    bool IsWall()       const {return mask & WALL;}
+    bool IsHost()       const {return mask & HOST_MASK;}
 
-    bool IsFriendly()   {return mask | FRIENDLY_MASK;}
-    bool IsEnemy()      {return mask | ENEMY_MASK;}
+    bool IsFriendly()   const {return mask & FRIENDLY_MASK;}
+    bool IsEnemy()      const {return mask & ENEMY_MASK;}
 
-    bool IsNeutral()    {return !IsFriendly() && !IsEnemy();}
+    bool IsNeutral()    const {return !IsFriendly() && !IsEnemy();}
 
-    bool IsPlayer()	{return mask | PLAYER_MASK;}
+    bool IsPlayer()	const {return mask | PLAYER_MASK;}
 };
 
 struct Map {
-    Tile map[kNumTiles][kNumTiles];
+    Tile tiles[kNumTiles][kNumTiles];
 };

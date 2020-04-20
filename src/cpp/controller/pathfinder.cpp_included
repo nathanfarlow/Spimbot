@@ -1,0 +1,161 @@
+#include "controller/pathfinder.h"
+
+#include "definitions.h"
+#include "util/util.h"
+
+List<Point> AStar::FindPath(const Point &from_pixel, const Point &to_pixel) {
+
+    //The tiles that correspond to the pixel coordinates
+    const Point from = {from_pixel.x / kTileSize, from_pixel.y / kTileSize};
+    const Point to = {to_pixel.x / kTileSize, to_pixel.y / kTileSize};
+
+    if(from == to) {
+        List<Point> early_ret;
+        early_ret.push_back(to_pixel);
+        return early_ret;
+    }
+
+    //Initialize nodes to default values
+    for(auto i = 0; i < kNumTiles; i++) {
+        for(auto j = 0; j < kNumTiles; j++) {
+            nodes_[i][j] = Node({j, i});
+        }
+    }
+
+    auto *end = &nodes_[to.y][to.x];
+
+    //Initialize current with start info
+    auto *current = &nodes_[from.y][from.x];
+    current->local_goal = 0;
+    current->global_goal = current->Heuristic(end);
+
+    //Because we can't use lambdas rip
+    class NodeComparator : public PriorityQueue<Node*>::Comparator {
+    public:
+        bool HigherPriority(Node* const &a, Node* const &b) override {
+            return a->global_goal < b->global_goal;
+        }
+    };
+
+    NodeComparator comparator;
+
+    PriorityQueue<Node*> to_visit(&comparator);
+
+    to_visit.push(current);
+
+    //Algorithm modified from https://github.com/OneLoneCoder/videos/blob/master/OneLoneCoder_PathFinding_AStar.cpp
+    while(!to_visit.empty() && current != end) {
+
+        while(!to_visit.empty() && to_visit.front()->visited)
+            to_visit.pop();
+
+        if(to_visit.empty())
+            break;
+
+        current = to_visit.front();
+        current->visited = true;
+
+        Node* neighbors[8];
+
+        const auto x = current->point.x;
+        const auto y = current->point.y;
+
+        neighbors[0] = y > 0                                    ? &nodes_[y - 1][x] : nullptr;
+        neighbors[1] = x > 0                                    ? &nodes_[y][x - 1] : nullptr;
+        neighbors[2] = y < kNumTiles - 1                        ? &nodes_[y + 1][x] : nullptr;
+        neighbors[3] = x < kNumTiles - 1                        ? &nodes_[y][x + 1] : nullptr;
+        neighbors[4] = y > 0 && x > 0                           ? &nodes_[y - 1][x - 1] : nullptr;
+        neighbors[5] = y > 0 && x < kNumTiles - 1               ? &nodes_[y - 1][x + 1] : nullptr;
+        neighbors[6] = y < kNumTiles - 1 && x > 0               ? &nodes_[y + 1][x - 1] : nullptr;
+        neighbors[7] = y < kNumTiles - 1 && x < kNumTiles - 1   ? &nodes_[y + 1][x + 1] : nullptr;
+
+        for(auto neighbor : neighbors) {
+            //Neighbor does not exist in this direction
+            if(neighbor == nullptr)
+                continue;
+
+            if(!neighbor->visited && !map_.tiles[neighbor->point.y][neighbor->point.x].IsWall()) {
+                to_visit.push(neighbor);
+            }
+
+            float possibly_lower_goal = current->local_goal + current->Heuristic(neighbor);
+
+            if(possibly_lower_goal < neighbor->local_goal) {
+                neighbor->parent = current;
+                neighbor->local_goal = possibly_lower_goal;
+                neighbor->global_goal = neighbor->local_goal + neighbor->Heuristic(end);
+            }
+
+        }
+
+    }
+
+    List<Point> path;
+
+    //Go back through the nodes to generate the list of tile coordinates
+    current = end;
+    while(current != nullptr) {
+        path.push_front(current->point);
+        current = current->parent;
+    }
+
+    //Convert from tile coordinates to pixel coordinates and remove unnecessary nodes
+    //that are in a line
+    return OptimizeAndConvert(path, from_pixel, to_pixel);
+}
+
+List<Point> AStar::OptimizeAndConvert(List<Point> &path, const Point &start_pixel, const Point &final_destination) {
+
+    List<Point> optimized;
+
+    bool prev_was_adj_pass = false;
+    int prev_slope = INT_MAX;
+
+    while(path.size() > 1) {
+        auto current = path.pop_back();
+        auto prev_move = path.back();
+
+        const int slope = current.x - prev_move.x == 0 ? 0
+                : (current.y - prev_move.y) / (current.x - prev_move.x);
+
+        const Point blocks[2] = {
+                {current.x, prev_move.y},
+                {prev_move.x, current.y}
+        };
+
+        int wall_index = -1;
+        for(int i = 0; i < 2; i++) {
+            const auto block = blocks[i];
+            if(block.x >= 0 && block.y >= 0 && block.x < kNumTiles && block.y < kNumTiles
+               && map_.tiles[block.y][block.x].IsWall())
+                wall_index = i;
+        }
+
+        const bool did_pass_wall = wall_index >= 0;
+
+        //Avoid collision with corner of wall by interpolating
+        //adjacent movement instead of diagonal
+        if(did_pass_wall) {
+            optimized.push_front(TileToPixels(current));
+            optimized.push_front(TileToPixels(blocks[1 - wall_index]));
+        }
+        //If we are moving in the same direction, don't add the point
+        //to save on time solving puzzles
+        else if(prev_was_adj_pass || slope != prev_slope) {
+            optimized.push_front(TileToPixels(current));
+        }
+
+        prev_was_adj_pass = did_pass_wall;
+        prev_slope = slope;
+    }
+
+    //Add the first move
+    if(start_pixel != path.back())
+        optimized.push_front(TileToPixels(path.pop_back()));
+
+    //Add the final destination
+    if(optimized.back() != final_destination)
+        optimized.push_back(final_destination);
+
+    return optimized;
+}

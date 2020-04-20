@@ -18,3 +18,12 @@ UNSAFE_FAST = NO
 CLANGFLAGS = -O3 -I include -fno-exceptions -fno-rtti -D DEBUG
 
 include $(CSPIM)/tools/.makefile
+
+.PHONY: run debug
+
+run: clean all
+	QtSpimbot -file $(OUTFILE) -file2 ../adversary.s -run -randommap -tournament
+
+debug: clean all
+	#Without the tournament tag, we can use syscalls for printf
+	QtSpimbot -file $(OUTFILE) -file2 ../adversary.s
