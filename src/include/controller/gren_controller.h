@@ -17,12 +17,15 @@ private:
     void Strategize(bool is_resuming_async);
 
     void generate_host_locations();
+    int distance_square(Point pos, Point target);
+    Point get_target();
+    int get_angle(Point pos, Point target);
 
     Point host_locations_[kNumHosts];
     Point recent_shot_pos_;
 
 public:
-    GrenController(Spimbot &bot) : AbstractController(bot), recent_shot_pos({-1, -1}) {}
+    GrenController(Spimbot &bot) : AbstractController(bot), recent_shot_pos_({-1, -1}) {}
 
     void Start() override;
     void OnTimer() override;

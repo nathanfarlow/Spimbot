@@ -28,7 +28,7 @@ struct Tile {
 
     bool IsNeutral()    {return !IsFriendly() && !IsEnemy();}
 
-    bool IsPlayer()	{return mask | PLAYER_MASK};
+    bool IsPlayer()	{return mask | PLAYER_MASK;}
 };
 
 struct Map {

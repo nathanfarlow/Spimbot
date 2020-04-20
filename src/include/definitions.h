@@ -82,12 +82,12 @@ struct Point {
     //for math where intermediate results may be negative.
     int x, y;
 
-    bool operator==(const Point& lhs, const Point& rhs)
+    bool operator==(const Point& other)
     {
-	return lhs.x == rhs.x && lhs.y == rhs.y;
+	return x == other.x && y == other.y;
     }
 
-    bool operator!=(const Point& lhs, const Point& rhs) {
-	return !(lhs == rhs);
+    bool operator!=(const Point& other) {
+	return !(*this == other);
     }
 };
