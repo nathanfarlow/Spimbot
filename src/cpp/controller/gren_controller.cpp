@@ -147,7 +147,7 @@ void GrenController::Strategize(bool is_resuming_async) {
 	    bot_.set_angle(travel_angle, Orientation::ABSOLUTE);
 
 	    // Step size 10?
-	    intents_.enqueue(new LineMoveIntent(this, 1, kMaxVelocity));
+	    intents_.enqueue(new ForwardMoveIntent(this, 1, kMaxVelocity));
 	}
     }
 }

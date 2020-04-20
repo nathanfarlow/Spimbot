@@ -48,3 +48,20 @@ bool LineMoveIntent::WasInterrupted() const {
         || controller_->get_bot().IsRespawn()
         || Intent::WasInterrupted();
 }
+
+void ForwardMoveIntent::Start() {
+    duration_ = pixels_ * 1000;
+
+    controller_->get_bot().ClearBonked();
+    controller_->get_bot().ClearRespawn();
+
+    controller_->get_bot().set_velocity(speed_);
+
+    start_ = *TIMER;
+    running_ = true;
+}
+
+void ForwardMoveIntent::Stop() {
+    controller_->get_bot().set_velocity(0);
+    running_ = false;
+}

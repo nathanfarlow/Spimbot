@@ -7,7 +7,7 @@
 class AbstractController;
 
 enum class IntentType {
-    LINE_MOVE
+    LINE_MOVE, FORWARD_MOVE
 };
 
 class Intent {
@@ -66,4 +66,19 @@ public:
     void Stop() override;
 
     bool WasInterrupted() const override;
+};
+
+// Intention to move forward a certain number of pixels
+class ForwardMoveIntent : public Intent {
+    private:
+	const int pixels_;
+	const int speed_;
+
+    public:
+	ForwardMoveIntent(AbstractController *controller, int pixels, int speed) 
+	    : Intent(controller, IntentType::FORWARD_MOVE, true), pixels_(pixels), speed_(speed) {}
+	void Start() override;
+	void Stop() override;
+
+	bool WasInterrupted() const override;
 };
