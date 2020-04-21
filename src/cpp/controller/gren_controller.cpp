@@ -105,6 +105,11 @@ void GrenController::Strategize(bool first_run, bool is_resuming_async) {
 
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
+	if (bot_.get_bytecoins() < 100) {
+	    intents_.push_back(new WaitForPuzzleIntent(this, 100));
+	    return;
+	}
+
 	Point target_pos = get_target();
 	target_pos = TileToPixels(target_pos);
 	Point player_pos = bot_.get_pos();
@@ -148,7 +153,7 @@ void GrenController::Strategize(bool first_run, bool is_resuming_async) {
 	    bot_.set_angle(travel_angle, Orientation::ABSOLUTE);
 
 	    // Step size 10?
-	    intents_.push_back(new ForwardMoveIntent(this, 1, kMaxVel));
+	    intents_.push_back(new ForwardMoveIntent(this, 100, kMaxVel));
 	}
     }
 }
