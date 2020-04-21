@@ -24,5 +24,8 @@ public:
     virtual void Start() = 0;
     virtual void OnTimer(bool first_run) = 0;
 
+    // Called when the PuzzleManager solves a puzzle
+    virtual void OnSolve() = 0;
+
     Spimbot &get_bot() {return bot_;}
 };

@@ -2,20 +2,20 @@
 
 #include "puzzle.h"
 
-class Controller;
+class AbstractController;
 
 class PuzzleManager {
 private:
     bool solving_, has_puzzle_, requesting_;
 
-    Controller *controller_;
+    AbstractController *controller_;
 
     volatile Puzzle puzzle_;
     Solution solution_;
 
     void Finish();
 public:
-    PuzzleManager(Controller *controller)
+    PuzzleManager(AbstractController *controller)
         : controller_(controller), solving_(false),
         has_puzzle_(false), requesting_(false) {}
 

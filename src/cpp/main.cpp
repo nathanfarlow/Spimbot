@@ -3,7 +3,8 @@
 #include "util/util.h"
 
 #include "spimbot/spimbot.h"
-#include "controller/controller.h"
+//#include "controller/controller.h"
+#include "controller/gren_controller.h"
 
 #include "util/memory.h"
 
@@ -22,7 +23,7 @@ int main() {
     init();
 
     Spimbot bot;
-    Controller controller(bot);
+    GrenController controller(bot);
     controller.Start();
 
     return 0;

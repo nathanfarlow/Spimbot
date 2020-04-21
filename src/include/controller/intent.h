@@ -92,7 +92,7 @@ class ForwardMoveIntent : public Intent {
 
     public:
 	ForwardMoveIntent(AbstractController *controller, int pixels, int speed) 
-	    : Intent(controller, IntentType::FORWARD_MOVE, true), pixels_(pixels), speed_(speed) {}
+	    : Intent(IntentType::FORWARD_MOVE, controller, true), pixels_(pixels), speed_(speed) {}
 	void Start() override;
 	void Stop() override;
 

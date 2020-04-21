@@ -1,12 +1,12 @@
 #include "controller/gren_controller.h"
 
 #include <stdio.h>
-#include <math.h>
-#include <limits.h>
 
 #include "definitions.h"
-#include "spimbot/map.h"
 #include "util/util.h"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
 
 AbstractController *AbstractController::global;
 
@@ -15,13 +15,42 @@ void GrenController::generate_host_locations() {
     int host_num = 0;
     for (int row = 0; row < kNumTiles; row++) {
 	for (int col = 0; col < kNumTiles; col++) {
-	    if (map.map[row][col].IsHost()) {
+	    if (map.tiles[row][col].IsHost()) {
 		// (x, y) format
 		host_locations_[host_num] = {col, row};
 		host_num++;
 	    }
 	}
     }
+}
+
+void GrenController::Start() {
+    generate_host_locations();
+
+    //Request puzzle before generating initial logic
+    puzzle_manager_.Request();
+
+    //Call OnTimer() to initialize starting logic
+    OnTimer(true);
+
+    while(true) {
+
+#ifdef PUZZLE_DEBUG
+        const unsigned start = *TIMER;
+#endif
+
+        while(!puzzle_manager_.HasPuzzle()) {
+            puzzle_manager_.Request();
+        }
+
+#ifdef PUZZLE_DEBUG
+        const unsigned end = *TIMER;
+        printf("Waited %u cycles for puzzle.\n", end - start);
+#endif
+        
+        puzzle_manager_.Solve();
+    }
+    
 }
 
 int GrenController::distance_square(Point pos, Point target) {
@@ -39,7 +68,7 @@ Point GrenController::get_target() {
     for (unsigned int i = 0; i < kNumHosts; i++) {
 	Point host_pos = host_locations_[i];
 	// Note that arena_map is in (y, x) format
-	Tile host = arena_map.map[host_pos.y][host_pos.x];
+	Tile host = arena_map.tiles[host_pos.y][host_pos.x];
 	if (!host.IsFriendly()) {
 	    // Host is neutral or enemy
 	    int new_distance = distance_square(player_pos, host_pos);
@@ -54,57 +83,28 @@ Point GrenController::get_target() {
     return target_pos;
 }
 
-void GrenController::Start() {
-    generate_host_locations();
-
-    //Request puzzle before generating initial logic
-    puzzle_manager_.Request();
-
-    //Call OnTimer() to initialize starting logic
-    OnTimer();
-
-    while(true) {
-
-#ifdef DEBUG
-        const unsigned start = *TIMER;
-#endif
-
-        while(!puzzle_manager_.HasPuzzle()) {
-            puzzle_manager_.Request();
-        }
-
-#ifdef DEBUG
-        const unsigned end = *TIMER;
-        printf("Waited %u cycles for puzzle.\n", end - start);
-#endif
-        
-        puzzle_manager_.Solve();
-    }
-    
-}
-
-//Returns the center of the tile
-inline Point TileToPixels(int x, int y) {
-    return {x * kTileSize + kTileSize / 2, y * kTileSize + kTileSize / 2};
-}
-
-inline Point TileToPixels(Point pos) {
-    return TileToPixels(pos.x, pos.y);
-}
-
-//Populate the intent queue
-void GrenController::Strategize(bool is_resuming_async) {
+//Populate the intent list
+void GrenController::Strategize(bool first_run, bool is_resuming_async) {
 
     if(is_resuming_async) {
-        //Async intent just finished.
-        //In the future we can check if it was interrupted
-        //by collision or respawn but for now just remove it
-        intents_.pop();
+        auto finished = intents_.pop_front();
+
+        if(finished->WasInterrupted()) {
+            //Clear the intent queue and regenerate positions
+            intents_.clear();
+
+            if(bot_.IsRespawn()) {
+                printf("We got shot\n");
+            } else if(bot_.IsBonked()) {
+                printf("We got bonked during movement\n");
+            }
+        }
+
+        delete finished;
     }
 
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
-        //intents_.enqueue(new LineMoveIntent(this, TileToPixels(1, 1), kMaxVelocity));
 	Point target_pos = get_target();
 	target_pos = TileToPixels(target_pos);
 	Point player_pos = bot_.get_pos();
@@ -148,7 +148,7 @@ void GrenController::Strategize(bool is_resuming_async) {
 	    bot_.set_angle(travel_angle, Orientation::ABSOLUTE);
 
 	    // Step size 10?
-	    intents_.enqueue(new ForwardMoveIntent(this, 1, kMaxVelocity));
+	    intents_.push_back(new ForwardMoveIntent(this, 1, kMaxVel));
 	}
     }
 }
@@ -166,24 +166,25 @@ int GrenController::get_angle(Point pos, Point target) {
 This is where the strategizing happens. We update our bot
 and then when we return, the puzzle continues to solve
 */
-void GrenController::OnTimer() {
+void GrenController::OnTimer(bool first_run) {
 
     //Check for expired async events, but leave it up to
     //Strategize() to remove them in case they were interrupted
     if(!intents_.empty()) {
         auto front = intents_.front();
 
-        if(front->IsExpired())
+        if(front->IsExpired()) {
             front->Stop();
+        }
     }
 
     bool first_loop = true;
     while(true) {
-        //Populate the intent queue
-        Strategize(first_loop);
+        //Populate the intent list
+        Strategize(first_run && first_loop, first_loop && !first_run);
         first_loop = false;
 
-        //Consume the intent queue
+        //Consume the intent list
         while(!intents_.empty()) {
             auto current = intents_.front();
 
@@ -193,18 +194,18 @@ void GrenController::OnTimer() {
             if(current->IsAsync()) {
 
                 //Minimum cycles we can support asynchronously
-                constexpr unsigned kMinCycles = 250;
+                constexpr unsigned kMinCycles = 350;
 
                 const unsigned duration = current->get_duration();
 
                 if(duration < kMinCycles) {
                     //Just wait for it to terminate synchronously and call ourselves as if there was an interrupt
-                    sleep(*TIMER - current->get_start() + duration);
-                    OnTimer();
+                    sleep(duration - current->get_start() + *TIMER);
+                    OnTimer(false);
                 } else {
                     //The approximate number of instructions it takes to handle the timer interrupt
                     //So we can call Stop() on the async intent as accurately as possible
-                    constexpr unsigned kNumHandlerInst = 138;
+                    constexpr unsigned kNumHandlerInst = 110;
                     *TIMER = current->get_start() + duration - kNumHandlerInst;
                     
                     return;
@@ -213,18 +214,46 @@ void GrenController::OnTimer() {
             } else {
                 //Otherwise the logic already terminated in Start(),
                 //so remove it and go to the next one.
-                delete intents_.pop();
+                delete intents_.pop_front();
             }
         }
     }
 
 }
 
+void GrenController::OnSolve() {
+    if(!intents_.empty()) {
+        auto front = intents_.front();
+
+        //If we're waiting for a puzzle
+        if(front->get_type() == IntentType::WAIT_PUZZLE) {
+            //Relay the fact that the puzzle was solved before the
+            //async event expired
+            front->Interrupt();  
+
+            //Cancel intent's async timer and simulate a timer interrupt
+            //without going through the handler, wasting cycles
+            *TIMER = INT_MAX;
+            OnTimer(false); 
+        }
+    }
+}
+
+/*
+    Unfortunately due to the limitations in the toolchain right now,
+    only one source file can include a header that defines an abstract
+    class. So including this file from controller.cpp is the workaround.
+*/
+#include "intent.cpp_included"
+#include "pathfinder.cpp_included"
+
 extern "C" {
 
 //This funciton is called by the kernel interrupt handler
 void timer_interrupt_handler() {
-    AbstractController::get_global()->OnTimer();
+    AbstractController::get_global()->OnTimer(false);
 }
 
 }
+
+#pragma clang diagnostic pop

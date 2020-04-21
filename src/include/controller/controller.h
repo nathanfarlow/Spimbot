@@ -28,7 +28,5 @@ public:
 
     void Start() override;
     void OnTimer(bool first_run) override;
-
-    //Called when the PuzzleManager solves a puzzle
-    void OnSolve();
+    void OnSolve() override;
 };

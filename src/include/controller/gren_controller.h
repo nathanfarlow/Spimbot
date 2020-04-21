@@ -2,7 +2,8 @@
 
 #include "abstractcontroller.h"
 #include "puzzle/puzzlemanager.h"
-#include "util/queue.h"
+#include "util/list/list.h"
+#include "intent.h"
 
 constexpr unsigned kMaxIntents = 512;
 constexpr unsigned kNumHosts = 16;
@@ -12,9 +13,9 @@ private:
 
     PuzzleManager puzzle_manager_;
 
-    Queue<Intent*> intents_;
+    List<Intent*> intents_;
 
-    void Strategize(bool is_resuming_async);
+    void Strategize(bool first_run, bool is_resuming_async);
 
     void generate_host_locations();
     int distance_square(Point pos, Point target);
@@ -25,8 +26,13 @@ private:
     Point recent_shot_pos_;
 
 public:
-    GrenController(Spimbot &bot) : AbstractController(bot), recent_shot_pos_({-1, -1}) {}
+    GrenController(Spimbot &bot) 
+	: AbstractController(bot), 
+	  recent_shot_pos_({-1, -1}),
+	  puzzle_manager_(this) {}
 
     void Start() override;
-    void OnTimer() override;
+    void OnTimer(bool first_run) override;
+
+    void OnSolve() override;
 };
