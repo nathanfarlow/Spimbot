@@ -21,27 +21,28 @@ public:
     void Shoot()                {*SHOOT_UDP_PACKET = 0;}
 
     ScannerInfo Scan() {
-        ScannerInfo info;
+        volatile ScannerInfo info;
         *USE_SCANNER = &info;
-        return info;
+        return {info.hit_x, info.hit_y, info.tile.mask};
     }
 
     OpponentHintInfo get_opponent_hint() const {
-        OpponentHintInfo hint;
+        volatile OpponentHintInfo hint;
         *GET_OPPONENT_HINT = &hint;
-        return hint;
+        return {hint.host_x, hint.host_y, hint.angle};
     }
 
     Map get_map() const {
+        //For some reason, this works without volatile.
         Map map;
         *ARENA_MAP = &map;
         return map;
     }
 
     ScoreReport get_scores() const {
-        ScoreReport scores;
+        volatile ScoreReport scores;
         *SCORES_REQUEST = &scores;
-        return scores;
+        return {scores.our_score, scores.opponent_score};
     }
 
     uint32_t get_bytecoins()    const  {return *GET_BYTECOINS;}
