@@ -34,19 +34,19 @@ struct ScoreReport {
 
 #define BOT_X                   ((uint32_t*)0xffff0020)
 #define BOT_Y                   ((uint32_t*)0xffff0024)
-#define GET_OPPONENT_HINT       ((OpponentHintInfo**)0xffff00ec)
+#define GET_OPPONENT_HINT       ((volatile OpponentHintInfo**)0xffff00ec)
 
 #define TIMER                   ((int32_t*)0xffff001c)
 #define ARENA_MAP               ((Map**)0xffff00dc)
 
 #define SHOOT_UDP_PACKET        ((uint32_t*)0xffff00e0)
 #define GET_BYTECOINS           ((uint32_t*)0xffff00e4)
-#define USE_SCANNER             ((ScannerInfo**)0xffff00e8)
+#define USE_SCANNER             ((volatile ScannerInfo**)0xffff00e8)
 
 #define REQUEST_PUZZLE          ((volatile Puzzle**)0xffff00d0)
 #define SUBMIT_SOLUTION         ((Solution**)0xffff00d4)
 
-#define SCORES_REQUEST          ((ScoreReport**)0xffff1018)
+#define SCORES_REQUEST          ((volatile ScoreReport**)0xffff1018)
 
 //Interrupt masks
 #define BONK_INT_MASK           0x1000
