@@ -17,6 +17,7 @@ void GrenController::generate_host_locations() {
 	for (int col = 0; col < kNumTiles; col++) {
 	    if (map.tiles[row][col].IsHost()) {
 		// (x, y) format
+		printf("Host location: (%d, %d)\n", col, row);
 		host_locations_[host_num] = {col, row};
 		host_num++;
 	    }
@@ -25,10 +26,10 @@ void GrenController::generate_host_locations() {
 }
 
 void GrenController::Start() {
-    generate_host_locations();
-
     //Request puzzle before generating initial logic
     puzzle_manager_.Request();
+
+    generate_host_locations();
 
     //Call OnTimer() to initialize starting logic
     OnTimer(true);
@@ -106,7 +107,7 @@ void GrenController::Strategize(bool first_run, bool is_resuming_async) {
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
 	if (bot_.get_bytecoins() < 100) {
-	    intents_.push_back(new WaitForPuzzleIntent(this, 100));
+	    intents_.push_back(new WaitForPuzzleIntent(this));
 	    return;
 	}
 
@@ -118,8 +119,14 @@ void GrenController::Strategize(bool first_run, bool is_resuming_async) {
 	int target_angle = get_angle(player_pos, target_pos);
 	bot_.set_angle(target_angle, Orientation::ABSOLUTE);
 
-	Tile scanned_tile = bot_.Scan().tile;
+        printf("Angle: %d\n", target_angle);
+
+	ScannerInfo result = bot_.Scan();
+        Tile scanned_tile = result.tile;
+        printf("Size of struct: %d, type: %d, point: (%d, %d)\n", sizeof(ScannerInfo), (int)result.tile.mask, (int)result.hit_x, (int)result.hit_y);
+
 	if (scanned_tile.IsHost()) {
+	    printf("Is host\n");
 	    bot_.Shoot();
 	    if (scanned_tile.IsEnemy()) {
 		// Shoot enemy host twice
@@ -127,8 +134,10 @@ void GrenController::Strategize(bool first_run, bool is_resuming_async) {
 	    }
 	    recent_shot_pos_ = target_pos;
 	} else if (scanned_tile.IsPlayer()) {
+	    printf("Is player\n");
 	    bot_.Shoot();
 	} else {
+	    printf("Is wall\n");
 	    int angle_sweep = 5;
 	    int travel_angle;
 
