@@ -67,3 +67,10 @@ void ForwardMoveIntent::Stop() {
     controller_->get_bot().set_velocity(0);
     running_ = false;
 }
+
+bool ForwardMoveIntent::WasInterrupted() const {
+    return controller_->get_bot().IsBonked()
+        || controller_->get_bot().IsRespawn()
+        || Intent::WasInterrupted();
+}
+

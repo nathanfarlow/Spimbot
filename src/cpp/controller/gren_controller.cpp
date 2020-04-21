@@ -63,7 +63,7 @@ int GrenController::distance_square(Point pos, Point target) {
 Point GrenController::get_target() {
     Map arena_map = bot_.get_map();
     int shortest_distance = INT_MAX;
-    Point player_pos = bot_.get_pos();
+    Point player_pos = PixelsToTile(bot_.get_pos());
     Point target_pos;
 
     for (unsigned int i = 0; i < kNumHosts; i++) {
@@ -112,6 +112,7 @@ void GrenController::Strategize(bool first_run, bool is_resuming_async) {
 	}
 
 	Point target_pos = get_target();
+        printf("Target: (%d, %d)\n", target_pos.x, target_pos.y);
 	target_pos = TileToPixels(target_pos);
 	Point player_pos = bot_.get_pos();
 	int current_angle = bot_.get_angle();
@@ -119,13 +120,10 @@ void GrenController::Strategize(bool first_run, bool is_resuming_async) {
 	int target_angle = get_angle(player_pos, target_pos);
 	bot_.set_angle(target_angle, Orientation::ABSOLUTE);
 
-        printf("Angle: %d\n", target_angle);
-
 	ScannerInfo result = bot_.Scan();
         Tile scanned_tile = result.tile;
-        printf("Size of struct: %d, type: %d, point: (%d, %d)\n", sizeof(ScannerInfo), (int)result.tile.mask, (int)result.hit_x, (int)result.hit_y);
 
-	if (scanned_tile.IsHost()) {
+	if (scanned_tile.IsHost() && !scanned_tile.IsFriendly()) {
 	    printf("Is host\n");
 	    bot_.Shoot();
 	    if (scanned_tile.IsEnemy()) {
@@ -163,6 +161,7 @@ void GrenController::Strategize(bool first_run, bool is_resuming_async) {
 
 	    // Step size 10?
 	    intents_.push_back(new ForwardMoveIntent(this, 100, kMaxVel));
+            printf("Added move intent\n");
 	}
     }
 }
@@ -181,12 +180,10 @@ This is where the strategizing happens. We update our bot
 and then when we return, the puzzle continues to solve
 */
 void GrenController::OnTimer(bool first_run) {
-
     //Check for expired async events, but leave it up to
     //Strategize() to remove them in case they were interrupted
     if(!intents_.empty()) {
         auto front = intents_.front();
-
         if(front->IsExpired()) {
             front->Stop();
         }
@@ -206,7 +203,6 @@ void GrenController::OnTimer(bool first_run) {
 
             //Schedule an interrupt and return to the puzzle solver if we can execute async
             if(current->IsAsync()) {
-
                 //Minimum cycles we can support asynchronously
                 constexpr unsigned kMinCycles = 350;
 
@@ -221,7 +217,6 @@ void GrenController::OnTimer(bool first_run) {
                     //So we can call Stop() on the async intent as accurately as possible
                     constexpr unsigned kNumHandlerInst = 110;
                     *TIMER = current->get_start() + duration - kNumHandlerInst;
-                    
                     return;
                 }
 
@@ -263,7 +258,7 @@ void GrenController::OnSolve() {
 
 extern "C" {
 
-//This funciton is called by the kernel interrupt handler
+//This function is called by the kernel interrupt handler
 void timer_interrupt_handler() {
     AbstractController::get_global()->OnTimer(false);
 }
