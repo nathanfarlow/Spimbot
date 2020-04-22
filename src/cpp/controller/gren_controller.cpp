@@ -14,14 +14,14 @@ void GrenController::generate_host_locations() {
     Map map = get_bot().get_map();
     int host_num = 0;
     for (int row = 0; row < kNumTiles; row++) {
-	for (int col = 0; col < kNumTiles; col++) {
-	    if (map.tiles[row][col].IsHost()) {
-		// (x, y) format
-		printf("Host location: (%d, %d)\n", col, row);
-		host_locations_[host_num] = {col, row};
-		host_num++;
-	    }
-	}
+        for (int col = 0; col < kNumTiles; col++) {
+            if (map.tiles[row][col].IsHost()) {
+                // (x, y) format
+                printf("Host location: (%d, %d)\n", col, row);
+                host_locations_[host_num] = {col, row};
+                host_num++;
+            }
+        }
     }
 }
 
@@ -67,18 +67,18 @@ Point GrenController::get_target() {
     Point target_pos;
 
     for (unsigned int i = 0; i < kNumHosts; i++) {
-	Point host_pos = host_locations_[i];
-	// Note that arena_map is in (y, x) format
-	Tile host = arena_map.tiles[host_pos.y][host_pos.x];
-	if (!host.IsFriendly()) {
-	    // Host is neutral or enemy
-	    int new_distance = distance_square(player_pos, host_pos);
-	    if (new_distance < shortest_distance && host_pos != recent_shot_pos_) {
-		// Make sure we didn't just shoot this target
-		target_pos = host_pos;
-		shortest_distance = new_distance;
-	    }
-	}
+        Point host_pos = host_locations_[i];
+        // Note that arena_map is in (y, x) format
+        Tile host = arena_map.tiles[host_pos.y][host_pos.x];
+        if (!host.IsFriendly()) {
+            // Host is neutral or enemy
+            int new_distance = distance_square(player_pos, host_pos);
+            if (new_distance < shortest_distance && host_pos != recent_shot_pos_) {
+                // Make sure we didn't just shoot this target
+                target_pos = host_pos;
+                shortest_distance = new_distance;
+            }
+        }
     }
 
     return target_pos;
@@ -106,70 +106,70 @@ void GrenController::Strategize(bool first_run, bool is_resuming_async) {
 
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
-	if (bot_.get_bytecoins() < 100) {
-	    intents_.push_back(new WaitForPuzzleIntent(this));
-	    return;
-	}
+        if (bot_.get_bytecoins() < 100) {
+            intents_.push_back(new WaitForPuzzleIntent(this));
+            return;
+        }
 
-	Point target_pos = get_target();
+        Point target_pos = get_target();
         printf("Target: (%d, %d)\n", target_pos.x, target_pos.y);
-	target_pos = TileToPixels(target_pos);
-	Point player_pos = bot_.get_pos();
-	int current_angle = bot_.get_angle();
+        target_pos = TileToPixels(target_pos);
+        Point player_pos = bot_.get_pos();
+        int current_angle = bot_.get_angle();
 
-	int target_angle = get_angle(player_pos, target_pos);
-	bot_.set_angle(target_angle, Orientation::ABSOLUTE);
+        int target_angle = get_angle(player_pos, target_pos);
+        bot_.set_angle(target_angle, Orientation::ABSOLUTE);
 
-	ScannerInfo result = bot_.Scan();
+        ScannerInfo result = bot_.Scan();
         Tile scanned_tile = result.tile;
 
-	if (scanned_tile.IsHost() && !scanned_tile.IsFriendly()) {
-	    printf("Is host\n");
-	    bot_.Shoot();
-	    if (scanned_tile.IsEnemy()) {
-		// Shoot enemy host twice
-		bot_.Shoot();
-	    }
-	    recent_shot_pos_ = target_pos;
-	} else if (scanned_tile.IsPlayer()) {
-	    printf("Is player\n");
-	    bot_.Shoot();
-	} else {
-	    printf("Is wall\n");
-	    int angle_sweep = 5;
-	    int travel_angle;
+        if (scanned_tile.IsHost() && !scanned_tile.IsFriendly()) {
+            printf("Is host\n");
+            bot_.Shoot();
+            if (scanned_tile.IsEnemy()) {
+                // Shoot enemy host twice
+                bot_.Shoot();
+            }
+            recent_shot_pos_ = target_pos;
+        } else if (scanned_tile.IsPlayer()) {
+            printf("Is player\n");
+            bot_.Shoot();
+        } else {
+            printf("Is wall\n");
+            int angle_sweep = 5;
+            int travel_angle;
 
-	    while (true) {
-		travel_angle = target_angle + angle_sweep;
-		bot_.set_angle(travel_angle, Orientation::ABSOLUTE);
-		scanned_tile = bot_.Scan().tile;
-		if (!scanned_tile.IsWall()) {
-		    break;
-		}
+            while (true) {
+                travel_angle = target_angle + angle_sweep;
+                bot_.set_angle(travel_angle, Orientation::ABSOLUTE);
+                scanned_tile = bot_.Scan().tile;
+                if (!scanned_tile.IsWall()) {
+                    break;
+                }
 
-		travel_angle = target_angle - angle_sweep;
-		bot_.set_angle(travel_angle, Orientation::ABSOLUTE);
-		scanned_tile = bot_.Scan().tile;
-		if (!scanned_tile.IsWall()) {
-		    break;
-		}
+                travel_angle = target_angle - angle_sweep;
+                bot_.set_angle(travel_angle, Orientation::ABSOLUTE);
+                scanned_tile = bot_.Scan().tile;
+                if (!scanned_tile.IsWall()) {
+                    break;
+                }
 
-		angle_sweep += 5;
-	    }
+                angle_sweep += 5;
+            }
 
-	    bot_.set_angle(travel_angle, Orientation::ABSOLUTE);
+            bot_.set_angle(travel_angle, Orientation::ABSOLUTE);
 
-	    // Step size 10?
-	    intents_.push_back(new ForwardMoveIntent(this, 100, kMaxVel));
+            // Step size 10?
+            intents_.push_back(new ForwardMoveIntent(this, 100, kMaxVel));
             printf("Added move intent\n");
-	}
+        }
     }
 }
 
 int GrenController::get_angle(Point pos, Point target) {
     float angle = atanf((float)(target.y - pos.y) / (target.x - pos.x));
     if (target.x < pos.x) {
-	angle += M_PI;
+        angle += M_PI;
     }
 
     return roundf(angle * 180 / M_PI);

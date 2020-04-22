@@ -27,9 +27,9 @@ private:
 
 public:
     GrenController(Spimbot &bot) 
-	: AbstractController(bot), 
-	  recent_shot_pos_({-1, -1}),
-	  puzzle_manager_(this) {}
+        : AbstractController(bot), 
+          recent_shot_pos_({-1, -1}),
+          puzzle_manager_(this) {}
 
     void Start() override;
     void OnTimer(bool first_run) override;
