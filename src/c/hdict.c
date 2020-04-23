@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "util/hdict.h"
 
 static inline size_t hashindex(hdict* H, hdict_key x) {
@@ -13,7 +14,7 @@ hdict* hdict_new(size_t capacity, key_equal_fn *key_equal, key_hash_fn *key_hash
     hdict* H = malloc(sizeof(struct hdict_header));
     H->size = 0;
     H->capacity = capacity;
-    H->table = malloc(capacity * sizeof(chain*));
+    H->table = calloc(capacity, sizeof(chain*));
     H->key_equal = key_equal;
     H->key_hash = key_hash;
     H->value_free = value_free;
@@ -32,7 +33,7 @@ hdict_value hdict_lookup(hdict* H, hdict_key x) {
 
 static inline void hdict_resize(hdict* H, size_t new_capacity) {
     chain** old_table = H->table;
-    chain** new_table = malloc(new_capacity * sizeof(chain*));
+    chain** new_table = calloc(new_capacity, sizeof(chain*));
     size_t old_capacity = H->capacity;
     H->capacity = new_capacity;
 

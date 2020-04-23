@@ -1,5 +1,5 @@
 #include <string.h>
-
+#include <stdlib.h>
 #include "util/c-list.h"
 #include "util/hdict.h"
 
@@ -11,26 +11,6 @@ typedef struct Board {
     LightsOut *lightsout;
     unsigned char moves[256];
 } Board;
-
-void toggle_light(int row, int col, LightsOut* puzzle, int action_num){
-    int num_rows = puzzle->num_rows;
-    int num_cols = puzzle->num_cols;
-    int num_colors = puzzle->num_colors;
-    unsigned char* board = puzzle->board;
-    board[row*num_cols + col] = (board[row*num_cols + col] + action_num) % num_colors;
-    if (row > 0) {
-        board[(row-1)*num_cols + col] = (board[(row-1)*num_cols + col] + action_num) % num_colors;
-    }
-    if (col > 0) {
-        board[row*num_cols + col-1] = (board[row*num_cols + col-1] + action_num) % num_colors;
-    }
-    if (row < num_rows - 1) {
-        board[(row+1)*num_cols + col] = (board[(row+1)*num_cols + col] + action_num) % num_colors;
-    }
-    if (col < num_cols - 1) {
-        board[row*num_cols + col+1] = (board[row*num_cols + col+1] + action_num) % num_colors;
-    }
-}
 
 bool key_equiv(void *x, void *y) {
     LightsOut *lightsout_x = (LightsOut *)x;
@@ -57,15 +37,8 @@ void value_free(void *value) {
     free(board);
 }
 
-bool lights_are_out(LightsOut *puzzle) {
-    for (size_t i = 0; i < puzzle->num_rows * puzzle->num_cols; i++)
-        if (puzzle->board[i])
-            return false;
-    return true;
-}
-
 int solve_breadth_first(LightsOut *puzzle, unsigned char *solution) {
-    Board *init = malloc(sizeof(Board));
+    Board *init = calloc(sizeof(Board), 1);
     init->lightsout = puzzle;
     list *queue = list_new();
     push_back(queue, init);
@@ -76,16 +49,14 @@ int solve_breadth_first(LightsOut *puzzle, unsigned char *solution) {
     int num_cols = puzzle->num_cols;
     int num_colors = puzzle->num_colors;
 
-    current_puzzle = pop_front(queue);
-    while (current_puzzle) {
+    while ((current_puzzle = pop_front(queue))) {
         for (unsigned row = 0; row < num_rows; row++) {
             for (unsigned col = 0; col < num_cols; col++) {
-                for (unsigned color = 1; color < num_colors; color++) {
-                    toggle_light(row, col, current_puzzle->lightsout, color);
+                for (unsigned char color = 1; color < num_colors; color++) {
+                    toggle_light_given(row, col, current_puzzle->lightsout, color);
                     current_puzzle->moves[row * num_cols + col] = (current_puzzle->moves[row * num_cols + col] + color) % num_colors;
-
-                    if (lights_are_out(current_puzzle->lightsout)) {
-                        memcpy(solution, &current_puzzle->moves, 256);
+                    if (board_done_given(num_rows, num_cols, current_puzzle->lightsout->board)) {
+                        memcpy(solution, &current_puzzle->moves, num_rows * num_cols);
                         hdict_free(hd);
                         list_free(queue, NULL);
                         return 0;
@@ -99,10 +70,12 @@ int solve_breadth_first(LightsOut *puzzle, unsigned char *solution) {
                         hdict_insert(hd, attempt->lightsout, attempt);
                         push_back(queue, attempt);
                     }
+
+					toggle_light_given(row, col, current_puzzle->lightsout, num_colors - color);
+                    current_puzzle->moves[row * num_cols + col] = (current_puzzle->moves[row * num_cols + col] + (num_colors - color)) % num_colors;
                 }
             }
         }
-        current_puzzle = pop_front(queue);
     }
     hdict_free(hd);
     list_free(queue, NULL);
