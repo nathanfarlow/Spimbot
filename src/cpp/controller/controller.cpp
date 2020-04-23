@@ -82,7 +82,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
 /*
 This is where the strategizing happens. We update our bot
-and then when we return, the puzzle continues to solve
+and then when we return, the puzzle continues to solve_given
 */
 void Controller::OnTimer(bool first_run) {
 

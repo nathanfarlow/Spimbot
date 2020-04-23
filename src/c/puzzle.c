@@ -1,32 +1,16 @@
+#include <string.h>
+
 #include "util/c-list.h"
 #include "util/hdict.h"
-typedef struct LightsOut {
-    int num_rows;
-    int num_cols;
-    int num_colors;
-    unsigned char board[256];
-} LightsOut;
+
+#include "puzzle/puzzle.h"
+
+typedef struct Puzzle LightsOut;
 
 typedef struct Board {
     LightsOut *lightsout;
     unsigned char moves[256];
 } Board;
-
-void memcpy(void *dest, const void *src, size_t n) {
-    int *d = (int *)dest;
-    int *s = (int *)src;
-    size_t ctr = 0;
-    for (; ctr < n / 4; ctr++) {
-        *(d++) = *(s++);
-    }
-    if (n % 4) {
-        char *a = (char *)d;
-        char *b = (char *)s;
-        for (ctr = 0; ctr < n; ctr++) {
-            *(a++) = *(b++);
-        }
-    }
-}
 
 void toggle_light(int row, int col, LightsOut* puzzle, int action_num){
     int num_rows = puzzle->num_rows;
@@ -80,7 +64,7 @@ bool lights_are_out(LightsOut *puzzle) {
     return true;
 }
 
-int breadth_first_search(LightsOut *puzzle, unsigned char *solution) {
+int solve_breadth_first(LightsOut *puzzle, unsigned char *solution) {
     Board *init = malloc(sizeof(Board));
     init->lightsout = puzzle;
     list *queue = list_new();
@@ -92,7 +76,8 @@ int breadth_first_search(LightsOut *puzzle, unsigned char *solution) {
     int num_cols = puzzle->num_cols;
     int num_colors = puzzle->num_colors;
 
-    while (current_puzzle = pop_front(queue)) {
+    current_puzzle = pop_front(queue);
+    while (current_puzzle) {
         for (unsigned row = 0; row < num_rows; row++) {
             for (unsigned col = 0; col < num_cols; col++) {
                 for (unsigned color = 1; color < num_colors; color++) {
@@ -117,6 +102,7 @@ int breadth_first_search(LightsOut *puzzle, unsigned char *solution) {
                 }
             }
         }
+        current_puzzle = pop_front(queue);
     }
     hdict_free(hd);
     list_free(queue, NULL);

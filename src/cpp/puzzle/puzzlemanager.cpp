@@ -42,7 +42,8 @@ void PuzzleManager::Solve() {
 #endif
 
     //SolvePuzzleReduction((Puzzle*)&puzzle_, &solution_);
-    solve((Puzzle*)&puzzle_, solution_.data, 0, 0);
+    //solve_given((Puzzle*) &puzzle_, solution_.data, 0, 0);
+    solve_breadth_first((Puzzle*)&puzzle_, solution_.data);
 
 #ifdef PUZZLE_DEBUG
     const unsigned end = *TIMER;

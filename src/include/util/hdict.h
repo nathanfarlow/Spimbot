@@ -3,8 +3,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "util/memory.h"
-#define malloc(s) memmgr_alloc(s)
-#define free(m) memmgr_free(m)
+
 typedef void *hdict_key;
 typedef void *hdict_value;
 typedef bool key_equal_fn(hdict_key x, hdict_key y);

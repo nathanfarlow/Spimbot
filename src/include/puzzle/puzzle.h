@@ -15,13 +15,18 @@ struct Solution {
 
 #ifdef __cplusplus
 
+//Using Gausian elimination approach
 void SolvePuzzleReduction(Puzzle *puzzle, Solution *solution);
 
 extern "C" {
 #include <stdbool.h>
 #endif
 
-bool solve(struct Puzzle *puzzle, unsigned char *solution, int row, int col);
+//Using breadth first search
+int solve_breadth_first(struct Puzzle *puzzle, unsigned char *solution);
+
+//Using provided solver. Pretty fast with optimizations.
+bool solve_given(struct Puzzle *puzzle, unsigned char *solution, int row, int col);
 
 #ifdef __cplusplus
 }

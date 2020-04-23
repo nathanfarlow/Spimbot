@@ -2,8 +2,6 @@
 #define LIST_H
 
 #include "util/memory.h"
-#define malloc(s) memmgr_alloc(s)
-#define free(m) memmgr_free(m)
 
 typedef struct list_node node;
 struct list_node {
