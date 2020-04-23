@@ -1,5 +1,5 @@
-#ifndef QUEUE_H
-#define QUEUE_H
+#ifndef LIST_H
+#define LIST_H
 
 #include "util/memory.h"
 #define malloc(s) memmgr_alloc(s)

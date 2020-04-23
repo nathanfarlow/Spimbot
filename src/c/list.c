@@ -31,11 +31,20 @@ void *pop_front(list *Q) {
 }
 
 void list_free(list *Q, void (*elem_free)(void *)) {
-	while (Q->front != Q->back) {
-		node *p = Q->front;
-		if (elem_free) (*elem_free)(p->data);
-		Q->front = Q->front->next;
-		free(p);
+	if (elem_free) {
+		while (Q->front != Q->back) {
+			node *p = Q->front;
+			elem_free(p->data);
+			Q->front = Q->front->next;
+			free(p);
+		}
+	}
+	else {
+		while (Q->front != Q->back) {
+			node *p = Q->front;
+			Q->front = Q->front->next;
+			free(p);
+		}
 	}
 	free(Q->front);
 	free(Q);
