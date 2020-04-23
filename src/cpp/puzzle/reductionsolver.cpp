@@ -1,7 +1,7 @@
 #include <puzzle/puzzle.h>
 #include <puzzle/matrix.h>
 
-void SolvePuzzleReduction(volatile Puzzle *puzzle, Solution *solution) {
+void SolvePuzzleReduction(Puzzle *puzzle, Solution *solution) {
 
     const auto rows = puzzle->num_rows;
     const auto cols = puzzle->num_cols;

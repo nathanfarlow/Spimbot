@@ -41,8 +41,8 @@ void PuzzleManager::Solve() {
     const unsigned start = *TIMER;
 #endif
 
-    //SolvePuzzleReduction(&puzzle_, &solution_);
-    solve(&puzzle_, &solution_, 0, 0);
+    //SolvePuzzleReduction((Puzzle*)&puzzle_, &solution_);
+    solve((Puzzle*)&puzzle_, solution_.data, 0, 0);
 
 #ifdef PUZZLE_DEBUG
     const unsigned end = *TIMER;

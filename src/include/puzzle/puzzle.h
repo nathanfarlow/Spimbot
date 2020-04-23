@@ -1,6 +1,6 @@
 #pragma once
 
-constexpr unsigned kMaxGridSize = 16;
+#define kMaxGridSize 16
 
 struct Puzzle {
     int num_rows;
@@ -10,13 +10,21 @@ struct Puzzle {
 };
 
 struct Solution {
-    //What is the format for this result?
-    unsigned char data[256]{};
+    unsigned char data[256];
 };
 
-void SolvePuzzleReduction(volatile Puzzle *puzzle, Solution *solution);
+#ifdef __cplusplus
+
+void SolvePuzzleReduction(Puzzle *puzzle, Solution *solution);
 
 extern "C" {
-//Code is in puzzle_sol.s
-void solve(volatile Puzzle *puzzle, Solution *solution, int row, int col);
+#include <stdbool.h>
+#endif
+
+bool solve(struct Puzzle *puzzle, unsigned char *solution, int row, int col);
+
+#ifdef __cplusplus
 }
+
+#endif
+
