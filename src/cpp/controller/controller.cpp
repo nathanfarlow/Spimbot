@@ -38,22 +38,50 @@ void Controller::Start() {
     
 }
 
+void Controller::Pathfind(const Point &to) {
+
+    auto path = pathfinder_.FindPath(pathfind_prev_to_, to);
+
+    while(!path.empty()) {
+        const auto point = path.pop_front();
+        intents_.push_back(new LineMoveIntent(this, point, kMaxVel));
+    }
+
+    pathfind_prev_to_ = to;
+}
 
 void Controller::Initialize() {
-    //Determine where we have spawned in the tournament
-    current_base_ = bot_.get_pos().x > 100 ? SOUTH_EAST : NORTH_WEST;
-    base = current_base_;
+
 }
 
 //Populate the intent queue
 void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
-    if(first_run) Initialize();
+    pathfind_prev_to_ = bot_.get_pos();
+
+    if(first_run) {
+        //Determine where we have spawned in the tournament
+        current_base_ = bot_.get_pos().x > 100 ? SOUTH_EAST : NORTH_WEST;
+
+        //Capture the first base with precomputed movements
+        intents_.push_back(new LineMoveIntent(this, TileToPixels(starting_pos_[current_base_][0]), kMaxVel));
+        intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
+        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][1]));
+        intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
+        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][2]));
+
+        intents_.push_back(new LineMoveIntent(this, TileToPixels(starting_pos_[current_base_][1]), kMaxVel));
+        intents_.push_back(new LineMoveIntent(this, TileToPixels(starting_pos_[current_base_][2]), kMaxVel));
+        intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
+        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][3]));
+        intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
+        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][0]));
+    }
 
     if(is_resuming_async) {
         auto finished = intents_.pop_front();
 
-        if(finished->WasInterrupted()) {
+        if(finished->WasInterrupted() && finished->get_type() != IntentType::WAIT_BYTECOINS) {
             //Clear the intent queue and regenerate positions
             intents_.clear();
         }
@@ -63,21 +91,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
-
-        auto res = Raycast(TileToPixels(bases_[0][0]));
-
-        printf("Hit at (%d, %d) with is host?: %d\n", res.hit_x, res.hit_y, res.tile.IsHost());
-
-        auto point = base_start_[base][direction];
-        auto path = pathfinder_.FindPath(bot_.get_pos(), TileToPixels(point));
-
-        while(!path.empty()) {
-            intents_.push_back(new LineMoveIntent(this, path.pop_front(), kMaxVel));
-        }
-
-        direction = (direction + 1) % 2;
-        if(direction == 0)
-            base = (base + 1) % kNumBases;
+        intents_.push_back(new WaitForBytecoinsIntent(this, 1e7));
     }
 }
 
@@ -108,6 +122,12 @@ void Controller::OnTimer(bool first_run) {
         //Consume the intent list
         while(!intents_.empty()) {
             auto current = intents_.front();
+
+            if(current->get_type() == IntentType::WAIT_BYTECOINS
+            && bot_.get_bytecoins() >= ((WaitForBytecoinsIntent*)current)->get_min_bytecoins()) {
+                delete intents_.pop_front();
+                continue;
+            }
 
             current->Start();
 
@@ -146,11 +166,12 @@ void Controller::OnSolve() {
     if(!intents_.empty()) {
         auto front = intents_.front();
 
-        //If we're waiting for a puzzle
-        if(front->get_type() == IntentType::WAIT_PUZZLE) {
+        //If we're waiting for bytecoins
+        if(front->get_type() == IntentType::WAIT_BYTECOINS
+            && bot_.get_bytecoins() >= ((WaitForBytecoinsIntent*)front)->get_min_bytecoins()) {
             //Relay the fact that the puzzle was solved before the
             //async event expired
-            front->Interrupt();  
+            front->Interrupt();
 
             //Cancel intent's async timer and simulate a timer interrupt
             //without going through the handler, wasting cycles
@@ -234,6 +255,29 @@ ScannerInfo Controller::Raycast(const Point &to) {
             ret.tile = tile;
 
             return ret;
+        }
+    }
+
+    return ret;
+}
+
+ArrayList<Point> Controller::FindHosts(bool ours, bool opponent, bool neutral, bool in_range_only) {
+    ArrayList<Point> ret;
+    const auto map = bot_.get_map();
+
+    for(const auto &base : bases_) {
+        for(const auto &host_pos : base) {
+            const auto host = map.tiles[host_pos.y][host_pos.x];
+
+            //This could be more accurate, but would require raycasting.
+            bool in_range = !in_range_only || TileToPixels(host_pos).DistanceTo(bot_.get_pos()) <= 20 * kTileSize;
+
+            if(in_range &&
+                (!ours || host.IsFriendly()) &&
+                (!opponent || host.IsEnemy()) &&
+                (!neutral || host.IsNeutral())) {
+                ret.push_back(host_pos);
+            }
         }
     }
 

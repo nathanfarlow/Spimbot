@@ -62,4 +62,14 @@ public:
         return {(int)*BOT_X, (int)*BOT_Y};
     }
 
+    void LookAt(const Point &to) {
+        const Point from = get_pos();
+
+        float angle = atanf((float)(to.y - from.y) / (to.x - from.x));
+
+        if(to.x < from.x)
+            angle += M_PI;
+
+        set_angle(roundf(angle * 180 / M_PI), Orientation::ABSOLUTE);
+    }
 };
