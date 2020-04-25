@@ -61,4 +61,5 @@ public:
     Point get_pos() const {
         return {(int)*BOT_X, (int)*BOT_Y};
     }
+
 };

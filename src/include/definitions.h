@@ -72,6 +72,10 @@ constexpr int kBotRadius = 3;
 
 constexpr unsigned kNumGameCycles = 1e7;
 
+constexpr unsigned kNumBases = 4;
+constexpr unsigned kHostsPerBase = 4;
+constexpr unsigned kNumHosts = kNumBases * kHostsPerBase;
+
 //The kernel sets these to 1 when an interrupt is called and acknowledged.
 //It is the userland code's responsibility to set it back to 0.
 extern volatile uint8_t has_bonk_interrupt;
@@ -85,7 +89,7 @@ struct Point {
     //for math where intermediate results may be negative.
     int x, y;
 
-    float DistanceTo(const Point &other) {
+    float DistanceTo(const Point &other) const {
         return sqrtf((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
     }
 
