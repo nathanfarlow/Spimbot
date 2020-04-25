@@ -27,3 +27,9 @@ run: clean all
 debug: clean all
 	#Without the tournament tag, we can use syscalls for printf
 	QtSpimbot -file $(OUTFILE) -file2 ../adversary.s
+
+run_opposite: clean all
+	QtSpimbot -file ../adversary.s -file2 $(OUTFILE) -run -randommap -tournament
+
+debug_opposite: clean all
+		QtSpimbot -file ../adversary.s -file2 $(OUTFILE)
