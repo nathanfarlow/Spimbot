@@ -105,8 +105,10 @@ void Controller::AttackHost(const Point &host) {
     //Pathfind to it. If at any point during the movement it is in
     //line of sight, it will be detected and shot. Worst case we get all the way there and shoot it ourselves.
 
-    if(PixelToTiles(bot_.get_pos()) != host)
+    if(PixelToTiles(bot_.get_pos()) != host) {
+        Pathfind(TileToPixels(FindNearestHost()));
         Pathfind(TileToPixels(host), 4);
+    }
 
     intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
     intents_.push_back(new CaptureHostIntent(this, host));
@@ -152,6 +154,8 @@ void Controller::SetNextBase() {
     auto end = TileToPixels(bases_[current_base_][(kHostsPerBase - 1) * current_direction_]);
 
     const auto pos = bot_.get_pos();
+
+    Pathfind(TileToPixels(FindNearestHost()));
 
     if(pos.DistanceTo(mid) < pos.DistanceTo(end))
         Pathfind(mid);
@@ -205,9 +209,9 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         auto finished = intents_.pop_front();
 
         if(finished->WasInterrupted() && finished->get_type() != IntentType::WAIT_BYTECOINS) {
+
             //We are either bonked or respawned.
             //Clear the intent queue and regenerate positions
-
             if(bot_.IsRespawn()) {
                 bot_.ClearRespawn();
 
@@ -228,13 +232,12 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
             }
 
             //If we are just bonked (shouldn't happen), we'll just clear and recompute paths
-            bot_.ClearBonked();
             intents_.clear();
         } else if(!attacking_first_base_ && finished->get_type() == IntentType::LINE_MOVE) {
 
             //We are in the middle of moving. See if we can snipe some targets on the way.
 
-            if(takeovers_in_base_ < 3 * kNumBases && bot_.get_bytecoins() >= kCostShoot) {
+            if(takeovers_in_base_ < 2 * kNumBases && bot_.get_bytecoins() >= kCostShoot) {
 
                 auto nearby = FindHosts(false, true, true, true);
 
@@ -265,7 +268,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
                 if(has_target) {
                     current_target_ = {-1, -1};
-                    //intents_.clear();
+                    intents_.clear();
                     --takeovers_in_base_;
                 }
 
@@ -278,7 +281,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
                     recently_capped_start_ = *TIMER;
 
                     intents_.push_front(new CaptureHostIntent(this, host));
-                    intents_.push_front(new WaitForBytecoinsIntent(this, kCostShoot * (num_times + 1)));
+                    intents_.push_front(new WaitForBytecoinsIntent(this, kCostShoot * num_times));
 
                     ++takeovers_in_base_;
                 }
@@ -303,7 +306,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
             recently_capped_.clear();
 
         //Detect if we are fighting for the base. Give up and go to the next if so.
-        if(!attacking_first_base_ && takeovers_in_base_ < 3 * kNumBases) {
+        if(!attacking_first_base_ && takeovers_in_base_ < 2 * kNumBases) {
             //Check if there are more hosts to shoot in our current base.
             const auto map = bot_.get_map();
 
@@ -499,6 +502,25 @@ ScannerInfo Controller::Raycast(const Point &to) {
     return ret;
 }
 
+Point Controller::FindNearestHost() {
+    float smallest_dist = INFINITY;
+    Point nearest;
+
+    const Point pos = bot_.get_pos();
+
+    for(const auto &base : bases_) {
+        for(const auto &host_pos : base) {
+            const float dist = TileToPixels(host_pos).DistanceTo(pos);
+            if(dist < smallest_dist) {
+                nearest = host_pos;
+                smallest_dist = dist;
+            }
+        }
+    }
+
+    return nearest;
+}
+
 ArrayList<Point> Controller::FindHosts(bool ours, bool opponent, bool neutral, bool in_range_only) {
     ArrayList<Point> ret;
     const auto map = bot_.get_map();
@@ -508,7 +530,7 @@ ArrayList<Point> Controller::FindHosts(bool ours, bool opponent, bool neutral, b
             const auto host = map.at(host_pos);
 
             //This could be more accurate, but would require raycasting.
-            bool in_range = TileToPixels(host_pos).DistanceTo(bot_.get_pos()) < 15 * kTileSize;
+            bool in_range = TileToPixels(host_pos).DistanceTo(bot_.get_pos()) < 12 * kTileSize;
 
             if((!in_range_only || in_range) &&
                     ((ours && host.IsFriendly())

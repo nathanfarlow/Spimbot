@@ -44,6 +44,7 @@ private:
             {{0, 0}, {0, 0}, {0, 0}}
     };
 
+    Point FindNearestHost();
     ArrayList<Point> FindHosts(bool ours, bool opponent, bool neutral, bool in_range_only);
 
     ScannerInfo Raycast(const Point &to);
