@@ -38,11 +38,18 @@ void Controller::Start() {
     
 }
 
-void Controller::Pathfind(const Point &to) {
+void Controller::Pathfind(const Point &to, unsigned hunt_interval) {
 
     auto path = pathfinder_.FindPath(pathfind_prev_to_, to);
 
+    unsigned i = 0;
     while(!path.empty()) {
+
+        //Always scan before moving and if it is the appropriate interval
+        if(i++ % hunt_interval == 0) {
+            intents_.push_back(new HuntOpponentIntent(this));
+        }
+
         const auto point = path.pop_front();
         intents_.push_back(new LineMoveIntent(this, point, kMaxVel));
     }
@@ -50,8 +57,25 @@ void Controller::Pathfind(const Point &to) {
     pathfind_prev_to_ = to;
 }
 
-void Controller::Initialize() {
+void Controller::AttackHost(const Point &host) {
+    //Pathfind to it. If at any point during the movement it is in
+    //line of sight, it will be detected and shot. Worst case we get all the way there and shoot it ourselves.
 
+    if(PixelToTiles(bot_.get_pos()) != host)
+        Pathfind(TileToPixels(host), 1);
+
+    intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
+    intents_.push_back(new CaptureHostIntent(this, host));
+    current_target_ = host;
+}
+
+inline int DoMod(int val, int mod) {
+    return (val % mod + mod) % mod;
+}
+
+void Controller::SetNextBase() {
+    current_base_ = DoMod(current_base_ + 2 * current_direction_ - 1, kNumBases);
+    Pathfind(TileToPixels(bases_[current_base_][(kHostsPerBase - 1) * (1 - current_direction_)]));
 }
 
 //Populate the intent queue
@@ -62,8 +86,11 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
     if(first_run) {
         //Determine where we have spawned in the tournament
         current_base_ = bot_.get_pos().x > 100 ? SOUTH_EAST : NORTH_WEST;
+        current_direction_ = COUNTERCLOCKWISE;
 
-        //Capture the first base with precomputed movements
+        //Capture the first base with precomputed actions
+        attacking_first_base_ = true;
+
         intents_.push_back(new LineMoveIntent(this, TileToPixels(starting_pos_[current_base_][0]), kMaxVel));
         intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
         intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][1]));
@@ -82,16 +109,73 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         auto finished = intents_.pop_front();
 
         if(finished->WasInterrupted() && finished->get_type() != IntentType::WAIT_BYTECOINS) {
+            //We are either bonked or respawned.
             //Clear the intent queue and regenerate positions
+
+            if(bot_.IsRespawn()) {
+                //TODO: set current base to nearest.
+            }
+
+            //If we are just bonked (shouldn't happen), we'll just clear and recompute paths
             intents_.clear();
+        } else if(!attacking_first_base_ && finished->get_type() == IntentType::LINE_MOVE) {
+
+            //We are in the middle of moving. See if we can snipe some targets on the way.
+            auto nearby = FindHosts(false, true, true, true);
+
+            if(bot_.get_bytecoins() >= kCostShoot) {
+
+                for(unsigned i = 0; i < nearby.size(); i++) {
+                    const auto host = nearby[i];
+
+                    //TODO: We could raycast a couple angles to snipe tricky ones.
+                    const auto res = Raycast(TileToPixels(host));
+
+                    if(res.tile.IsHost() && host.x == res.hit_x && host.y == res.hit_y) {
+                        CaptureHostIntent cap(this, host);
+                        cap.Start();
+
+                        //We hit the current target, so we do not need to continue moving towards it.
+                        if(host == current_target_) {
+                            current_target_ = {-1, -1};
+                            intents_.clear();
+                        }
+                    }
+                }
+
+            }
+
+
         }
 
         delete finished;
+
     }
 
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
-        intents_.push_back(new WaitForBytecoinsIntent(this, 1e7));
+
+        if(!attacking_first_base_) {
+            //Check if there are more hosts to shoot in our current base.
+            const auto map = bot_.get_map();
+
+            for(unsigned i = 0; i < kNumBases; i++) {
+                //Iterate through the hosts in the base in the appropriate direction to not make
+                //unnecessary movements.
+                const auto host = bases_[current_base_][current_direction_ == COUNTERCLOCKWISE ? i : kNumBases - i - 1];
+                const auto tile = map.at(host);
+
+                if(tile.IsHost() && !tile.IsFriendly()) {
+                    AttackHost(host);
+                    return;
+                }
+            }
+        }
+
+        //We captured everything in our current base, so go to the next one.
+        SetNextBase();
+
+        attacking_first_base_ = false;
     }
 }
 
@@ -220,7 +304,8 @@ ArrayList<Point> BresenhamLine(Point from, Point to) {
     for(int x = x0; x <= x1; x++) {
 
         Point cur_tile;
-        if(steep) cur_tile = {y, x}; else cur_tile = {x, y};
+        if(steep) cur_tile = PixelToTiles({y, x});
+        else cur_tile = PixelToTiles({x, y});
 
         if(last_tile != cur_tile) {
             result.push_back(cur_tile);
@@ -245,9 +330,12 @@ ScannerInfo Controller::Raycast(const Point &to) {
     const auto map = bot_.get_map();
     auto line = BresenhamLine(bot_.get_pos(), to);
 
+    const bool reverse = line[0] != PixelToTiles(bot_.get_pos());
+
     for(size_t i = 0; i < line.size(); i++) {
-        const Point pos = line[i];
-        const Tile tile = map.tiles[pos.y][pos.x];
+        const Point pos = line[reverse ? line.size() - i - 1 : i];
+
+        const Tile tile = map.at(pos);
 
         if(tile.IsWall() || tile.IsHost()) {
             ret.hit_x = pos.x;
@@ -267,17 +355,18 @@ ArrayList<Point> Controller::FindHosts(bool ours, bool opponent, bool neutral, b
 
     for(const auto &base : bases_) {
         for(const auto &host_pos : base) {
-            const auto host = map.tiles[host_pos.y][host_pos.x];
+            const auto host = map.at(host_pos);
 
             //This could be more accurate, but would require raycasting.
-            bool in_range = !in_range_only || TileToPixels(host_pos).DistanceTo(bot_.get_pos()) <= 20 * kTileSize;
+            bool in_range = TileToPixels(host_pos).DistanceTo(bot_.get_pos()) < 15 * kTileSize;
 
-            if(in_range &&
-                (!ours || host.IsFriendly()) &&
-                (!opponent || host.IsEnemy()) &&
-                (!neutral || host.IsNeutral())) {
+            if((!in_range_only || in_range) &&
+                    ((ours && host.IsFriendly())
+                    || (opponent && host.IsEnemy())
+                    || (neutral && host.IsNeutral()))) {
                 ret.push_back(host_pos);
             }
+
         }
     }
 

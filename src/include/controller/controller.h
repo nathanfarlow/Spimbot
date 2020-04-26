@@ -18,7 +18,9 @@ private:
 
     enum Base {
         NORTH_WEST, SOUTH_WEST, SOUTH_EAST, NORTH_EAST
-    } current_base_;
+    };
+
+    int current_base_;
 
     //listed in counter clockwise order, these are the hosts in each base
     Point bases_[kNumBases][kHostsPerBase] = {
@@ -31,13 +33,8 @@ private:
     enum {
         CLOCKWISE, COUNTERCLOCKWISE
     };
-    //As we traverse the board, these are free spaces in each base
-    Point base_start_[kNumBases][2] = {
-            {{6, 11}, {15, 6}},     //North west
-            {{25, 5}, {34, 13}},    //South west
-            {{32, 24}, {24, 33}},   //South east
-            {{12, 34}, {5, 27}}     //North east
-    };
+
+    int current_direction_;
 
     //These are the positions we want to move to first in the beginning of the game
     Point starting_pos_[kNumBases][3] = {
@@ -52,10 +49,15 @@ private:
     ScannerInfo Raycast(const Point &to);
 
     Point pathfind_prev_to_;
-    void Pathfind(const Point &to);
-    void Initialize();
+    void Pathfind(const Point &to, unsigned hunt_interval = UINT32_MAX);
 
     void Strategize(bool first_run, bool is_resuming_async);
+
+    void AttackHost(const Point &host);
+    void SetNextBase();
+
+    Point current_target_;
+    bool attacking_first_base_;
 
 public:
     Controller(Spimbot &bot)

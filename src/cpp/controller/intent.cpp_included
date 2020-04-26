@@ -34,11 +34,15 @@ bool LineMoveIntent::WasInterrupted() const {
 
 void CaptureHostIntent::Start() {
 
-    const auto tile = controller_->get_bot().get_map().tiles[host_.y][host_.x];
+    const auto tile = controller_->get_bot().get_map().at(host_);
     int num_times = tile.IsFriendly() ? 0 : tile.IsNeutral() ? 1 : 2;
 
     controller_->get_bot().LookAt(TileToPixels(host_));
 
     for(int i = 0; i < num_times; i++)
         controller_->get_bot().Shoot();
+}
+
+void HuntOpponentIntent::Start() {
+
 }

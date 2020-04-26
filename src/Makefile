@@ -19,17 +19,17 @@ CLANGFLAGS = -O3 -I include -fno-exceptions -fno-rtti -D DEBUG
 
 include $(CSPIM)/tools/.makefile
 
-.PHONY: run debug
+.PHONY: run debug run_opposite debug_opposite
 
 run: clean all
 	QtSpimbot -file $(OUTFILE) -file2 ../adversary.s -run -randommap -tournament
 
 debug: clean all
 	#Without the tournament tag, we can use syscalls for printf
-	QtSpimbot -file $(OUTFILE) -file2 ../adversary.s
+	QtSpimbot -debug -file $(OUTFILE) -file2 ../adversary.s
 
 run_opposite: clean all
 	QtSpimbot -file ../adversary.s -file2 $(OUTFILE) -run -randommap -tournament
 
 debug_opposite: clean all
-		QtSpimbot -file ../adversary.s -file2 $(OUTFILE)
+		QtSpimbot -debug -file ../adversary.s -file2 $(OUTFILE)

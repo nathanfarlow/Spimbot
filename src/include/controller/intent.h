@@ -7,7 +7,7 @@
 class AbstractController;
 
 enum class IntentType {
-    WAIT_BYTECOINS, LINE_MOVE, CAPTURE_HOST
+    WAIT_BYTECOINS, LINE_MOVE, CAPTURE_HOST, HUNT_OPPONENT
 };
 
 class Intent {
@@ -54,14 +54,11 @@ class WaitForBytecoinsIntent : public Intent {
 private:
     const unsigned min_bytecoins_;
 public:
-    WaitForBytecoinsIntent(AbstractController *controller, unsigned min_bytecoins, unsigned max_wait)
+    WaitForBytecoinsIntent(AbstractController *controller, unsigned min_bytecoins, unsigned max_wait = kNumGameCycles * 100)
         : Intent(IntentType::WAIT_BYTECOINS, controller, true),
         min_bytecoins_(min_bytecoins) {
         duration_ = max_wait;
     }
-
-    WaitForBytecoinsIntent(AbstractController *controller, unsigned min_bytecoins)
-        : WaitForBytecoinsIntent(controller, min_bytecoins,kNumGameCycles * 100) {}
 
     void Start() {start_ = *TIMER; running_ = true;}
     void Stop()  {running_ = false;}
@@ -94,6 +91,18 @@ public:
     CaptureHostIntent(AbstractController *controller, const Point &host)
         : Intent(IntentType::CAPTURE_HOST, controller, false),
           host_(host) {}
+
+    void Start() override;
+    void Stop()  override {}
+};
+
+class HuntOpponentIntent : public Intent {
+private:
+    const unsigned num_scans_;
+public:
+    explicit HuntOpponentIntent(AbstractController *controller, unsigned num_scans = 10)
+        : Intent(IntentType::HUNT_OPPONENT, controller, false),
+        num_scans_(num_scans) {}
 
     void Start() override;
     void Stop()  override {}

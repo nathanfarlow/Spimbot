@@ -74,7 +74,7 @@ List<Point> AStar::FindPath(const Point &from_pixel, const Point &to_pixel) {
             if(neighbor == nullptr)
                 continue;
 
-            if(!neighbor->visited && !map_.tiles[neighbor->point.y][neighbor->point.x].IsWall()) {
+            if(!neighbor->visited && !map_.at(neighbor->point).IsWall()) {
                 to_visit.push(neighbor);
             }
 
@@ -127,7 +127,7 @@ List<Point> AStar::OptimizeAndConvert(List<Point> &path, const Point &start_pixe
         for(int i = 0; i < 2; i++) {
             const auto block = blocks[i];
             if(block.x >= 0 && block.y >= 0 && block.x < kNumTiles && block.y < kNumTiles
-               && map_.tiles[block.y][block.x].IsWall())
+               && map_.at(block).IsWall())
                 wall_index = i;
         }
 
