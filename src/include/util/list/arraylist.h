@@ -32,6 +32,8 @@ public:
     T pop_front() override;
     T pop_back() override;
 
+    bool contains(const T& obj) const override;
+
     void clear() override;
 
     size_t size() const override {return size_;};

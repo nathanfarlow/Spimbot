@@ -33,3 +33,6 @@ run_opposite: clean all
 
 debug_opposite: clean all
 		QtSpimbot -debug -file ../adversary.s -file2 $(OUTFILE)
+
+debug_rivalry: clean all
+	QtSpimbot -debug -file $(OUTFILE) -file2 $(OUTFILE)	 -tournament

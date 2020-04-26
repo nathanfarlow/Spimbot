@@ -54,6 +54,8 @@ private:
     void Strategize(bool first_run, bool is_resuming_async);
 
     void AttackHost(const Point &host);
+
+    int ComputeBaseScore(int base);
     void SetNextBase();
 
     Point current_target_;

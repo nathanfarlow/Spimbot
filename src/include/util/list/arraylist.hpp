@@ -117,3 +117,13 @@ void ArrayList<T>::Resize(size_t new_size) {
     delete[] arr_;
     arr_ = new_arr;
 }
+
+template <typename T>
+bool ArrayList<T>::contains(const T& obj) const {
+    for(size_t i = 0; i < size(); i++) {
+        if(arr_[i] == obj)
+            return true;
+    }
+
+    return false;
+}

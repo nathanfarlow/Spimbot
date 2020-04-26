@@ -130,3 +130,17 @@ T List<T>::pop_back() {
 
     return ret;
 }
+
+template <typename T>
+bool List<T>::contains(const T& obj) const {
+    auto current = head_;
+
+    while(current != nullptr) {
+        if(current->data == obj)
+            return true;
+
+        current = current->next;
+    }
+
+    return false;
+}

@@ -73,8 +73,38 @@ inline int DoMod(int val, int mod) {
     return (val % mod + mod) % mod;
 }
 
+int Controller::ComputeBaseScore(int base) {
+    int score = 0;
+
+    printf("Contemplating %d\n", base);
+
+    const auto map = bot_.get_map();
+
+    for(const auto &host : bases_[base]) {
+        const auto tile = map.at(host);
+        score += tile.IsNeutral() ? 1 : tile.IsEnemy() ? 2 : 0;
+    }
+
+    return score;
+}
+
 void Controller::SetNextBase() {
-    current_base_ = DoMod(current_base_ + 2 * current_direction_ - 1, kNumBases);
+
+    int potential[] = {
+            DoMod(current_base_ + -2 * current_direction_ + 1, kNumBases), //counterclockwise
+            DoMod(current_base_ + 2 * current_direction_ - 1, kNumBases) //clockwise
+    };
+
+    int scores[] = {
+            ComputeBaseScore(potential[0]),
+            ComputeBaseScore(potential[1])
+    };
+
+    int new_base = scores[0] > scores[1] ? potential[0] : potential[1];
+
+    current_direction_ = (current_base_ > new_base && new_base != 0) || (current_base_ == 0 && new_base == kNumBases - 1) ? CLOCKWISE : COUNTERCLOCKWISE;
+    current_base_ = new_base;
+
     Pathfind(TileToPixels(bases_[current_base_][(kHostsPerBase - 1) * (1 - current_direction_)]));
 }
 
@@ -105,6 +135,10 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][0]));
     }
 
+    //We have to keep track of points we just captured because the shooting
+    //takes time to reach it.
+    ArrayList<Point> just_capped;
+
     if(is_resuming_async) {
         auto finished = intents_.pop_front();
 
@@ -123,23 +157,34 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
             //We are in the middle of moving. See if we can snipe some targets on the way.
             auto nearby = FindHosts(false, true, true, true);
 
-            if(bot_.get_bytecoins() >= kCostShoot) {
+            if(bot_.get_bytecoins() >= kCostShoot * 2) {
 
                 for(unsigned i = 0; i < nearby.size(); i++) {
                     const auto host = nearby[i];
 
                     //TODO: We could raycast a couple angles to snipe tricky ones.
-                    const auto res = Raycast(TileToPixels(host));
+                    auto res = Raycast(TileToPixels(host));
 
                     if(res.tile.IsHost() && host.x == res.hit_x && host.y == res.hit_y) {
-                        CaptureHostIntent cap(this, host);
-                        cap.Start();
 
-                        //We hit the current target, so we do not need to continue moving towards it.
-                        if(host == current_target_) {
-                            current_target_ = {-1, -1};
-                            intents_.clear();
+                        //Sometimes the ray caster gives false positives, but never true negatives.
+                        //Use a bytecoin to confirm it.
+                        bot_.LookAt(TileToPixels(host));
+                        res = bot_.Scan();
+
+                        if(res.tile.IsHost() && host.x == res.hit_x && host.y == res.hit_y) {
+                            CaptureHostIntent cap(this, host);
+                            cap.Start();
+
+                            just_capped.push_back(host);
+
+                            //We hit the current target, so we do not need to continue moving towards it.
+                            if(host == current_target_) {
+                                current_target_ = {-1, -1};
+                                intents_.clear();
+                            }
                         }
+
                     }
                 }
 
@@ -165,7 +210,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
                 const auto host = bases_[current_base_][current_direction_ == COUNTERCLOCKWISE ? i : kNumBases - i - 1];
                 const auto tile = map.at(host);
 
-                if(tile.IsHost() && !tile.IsFriendly()) {
+                if(tile.IsHost() && !tile.IsFriendly() && !just_capped.contains(host)) {
                     AttackHost(host);
                     return;
                 }

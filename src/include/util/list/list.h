@@ -18,6 +18,8 @@ public:
 
     virtual void clear() = 0;
 
+    virtual bool contains(const T& obj) const = 0;
+
     virtual size_t size() const = 0;
 
     virtual bool empty() const {return size() == 0;}
@@ -56,6 +58,8 @@ public:
     T pop_back() override;
 
     void clear() override;
+
+    virtual bool contains(const T& obj) const override;
 
     size_t size() const override {return size_;};
 };
