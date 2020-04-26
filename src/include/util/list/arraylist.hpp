@@ -1,8 +1,43 @@
+#include <string.h>
 
 template<typename T>
 ArrayList<T>::~ArrayList() {
     delete[] arr_;
 }
+
+template <typename T>
+ArrayList<T>::ArrayList(const ArrayList<T> &other) {
+    *this = other;
+}
+
+template <typename T>
+ArrayList<T>::ArrayList(ArrayList<T> &&other) noexcept {
+    *this = other;
+}
+
+template <typename T>
+ArrayList<T> &ArrayList<T>::operator=(const ArrayList<T> &other) {
+    size_ = 0;
+
+    for(size_t i = 0; i < other.size(); i++)
+        push_back(other[i]);
+
+    return *this;
+}
+
+template <typename T>
+ArrayList<T> &ArrayList<T>::operator=(ArrayList<T> &&other) noexcept {
+    auto temp_size = size_;
+    size_ = other.temp_size;
+    other.size_ = temp_size;
+
+    auto temp_ptr = arr_;
+    arr_ = other.arr_;
+    other.arr_ = temp_ptr;
+
+    return *this;
+}
+
 
 template<typename T>
 void ArrayList<T>::push_front(const T &value) {
