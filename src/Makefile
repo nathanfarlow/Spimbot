@@ -15,7 +15,7 @@ OUTDIR = out
 UNSAFE_FAST = NO
 
 #If -O0 works, try to increase it until it breaks.
-CLANGFLAGS = -O3 -I include -fno-exceptions -fno-rtti -D DEBUG
+CLANGFLAGS = -O3 -I include -fno-exceptions -fno-rtti -fno-threadsafe-statics -nostdlib -fno-use-cxa-atexit -ffreestanding -D DEBUG
 
 include $(CSPIM)/tools/.makefile
 

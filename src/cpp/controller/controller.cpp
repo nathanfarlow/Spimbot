@@ -40,11 +40,57 @@ void Controller::Start() {
 
 void Controller::Pathfind(const Point &to, unsigned hunt_interval) {
 
-    auto path = pathfinder_.FindPath(pathfind_prev_to_, to);
+    //Another dirty workaround for the toolchain so we don't have the abstract class
+    //in the header that main.cpp includes. Awkward.
+    struct Path {
+        Point from, to;
+        List<Point> path;
+
+        //workaround so we can use the lists
+        bool operator==(const Path &other) {return false;}
+    };
+
+    static ArrayList<Path> path_cache_;
+
+    const auto from = pathfind_prev_to_;
+
+    Path wrapper;
+    wrapper.from = from;
+    wrapper.to = to;
+
+    bool was_cached = false;
+
+    for(size_t i = 0; i < path_cache_.size(); i++) {
+        auto potential = path_cache_[i];
+
+        if(potential.from == from && potential.to == to) {
+            //Normal cached path
+            wrapper.path = potential.path;
+            was_cached = true;
+            break;
+        } else if(potential.from == to && potential.to == from){
+            //Backwards cached path
+
+            for(size_t j = 0; j < potential.path.size(); j++) {
+                auto to_add = potential.path.pop_back();
+                wrapper.path.push_back(to_add);
+                potential.path.push_front(to_add);
+            }
+
+            was_cached = true;
+            break;
+        }
+    }
+
+    if(!was_cached) {
+        wrapper.path = pathfinder_.FindPath(pathfind_prev_to_, to);
+        path_cache_.push_back({from, to, wrapper.path});
+    }
+
 
     unsigned i = 0;
-    while(!path.empty()) {
-        const auto point = path.pop_front();
+    while(!wrapper.path.empty()) {
+        const auto point = wrapper.path.pop_front();
         intents_.push_back(new LineMoveIntent(this, point, kMaxVel));
 
         if(i++ % hunt_interval == 0) {
@@ -60,11 +106,13 @@ void Controller::AttackHost(const Point &host) {
     //line of sight, it will be detected and shot. Worst case we get all the way there and shoot it ourselves.
 
     if(PixelToTiles(bot_.get_pos()) != host)
-        Pathfind(TileToPixels(host), 1);
+        Pathfind(TileToPixels(host), 4);
 
     intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
     intents_.push_back(new CaptureHostIntent(this, host));
     current_target_ = host;
+
+    ++takeovers_in_base_;
 }
 
 inline int DoMod(int val, int mod) {
@@ -98,11 +146,28 @@ void Controller::SetNextBase() {
 
     int new_base = scores[0] > scores[1] ? potential[0] : potential[1];
 
-    current_direction_ = (current_base_ > new_base && new_base != 0) || (current_base_ == 0 && new_base == kNumBases - 1) ? CLOCKWISE : COUNTERCLOCKWISE;
+    current_direction_ = (new_base - current_base_) % kNumBases == 1 ? COUNTERCLOCKWISE : CLOCKWISE;
+
+    auto mid = TileToPixels(bases_[current_base_][1]);
+    auto end = TileToPixels(bases_[current_base_][(kHostsPerBase - 1) * current_direction_]);
+
+    const auto pos = bot_.get_pos();
+
+    if(pos.DistanceTo(mid) < pos.DistanceTo(end))
+        Pathfind(mid);
+
+    Pathfind(end);
+    Pathfind(TileToPixels(bases_[new_base][(kHostsPerBase - 1) * (1 - current_direction_)]));
+
     current_base_ = new_base;
 
-    Pathfind(TileToPixels(bases_[current_base_][(kHostsPerBase - 1) * (1 - current_direction_)]));
+    moving_bases_ = true;
 }
+
+
+//This would be better as an array list and in the class, but toolchain mishaps strike again.
+static List<Point> recently_capped_;
+static int recently_capped_start_;
 
 //Populate the intent queue
 void Controller::Strategize(bool first_run, bool is_resuming_async) {
@@ -114,26 +179,27 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         current_base_ = bot_.get_pos().x > 100 ? SOUTH_EAST : NORTH_WEST;
         current_direction_ = COUNTERCLOCKWISE;
 
+        recently_capped_start_ = 0;
+
         //Capture the first base with precomputed actions
         attacking_first_base_ = true;
+        moving_bases_ = false;
 
         intents_.push_back(new LineMoveIntent(this, TileToPixels(starting_pos_[current_base_][0]), kMaxVel));
         intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
-        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][1]));
+        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][0]));
         intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
-        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][2]));
+        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][1]));
 
         intents_.push_back(new LineMoveIntent(this, TileToPixels(starting_pos_[current_base_][1]), kMaxVel));
         intents_.push_back(new LineMoveIntent(this, TileToPixels(starting_pos_[current_base_][2]), kMaxVel));
         intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
-        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][3]));
+        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][2]));
         intents_.push_back(new WaitForBytecoinsIntent(this, kCostShoot));
-        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][0]));
-    }
+        intents_.push_back(new CaptureHostIntent(this, bases_[current_base_][3]));
 
-    //We have to keep track of points we just captured because the shooting
-    //takes time to reach it.
-    ArrayList<Point> just_capped;
+        intents_.push_back(new LineMoveIntent(this, TileToPixels(bases_[current_base_][3]), kMaxVel));
+    }
 
     if(is_resuming_async) {
         auto finished = intents_.pop_front();
@@ -143,6 +209,8 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
             //Clear the intent queue and regenerate positions
 
             if(bot_.IsRespawn()) {
+                bot_.ClearRespawn();
+
                 //Detect the base that we respawned in.
                 const Point respawn_tile = PixelToTiles(bot_.get_pos());
                 bool found = false;
@@ -160,13 +228,18 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
             }
 
             //If we are just bonked (shouldn't happen), we'll just clear and recompute paths
+            bot_.ClearBonked();
             intents_.clear();
         } else if(!attacking_first_base_ && finished->get_type() == IntentType::LINE_MOVE) {
 
             //We are in the middle of moving. See if we can snipe some targets on the way.
-            auto nearby = FindHosts(false, true, true, true);
 
-            if(bot_.get_bytecoins() >= kCostShoot * 2) {
+            if(takeovers_in_base_ < 3 * kNumBases && bot_.get_bytecoins() >= kCostShoot) {
+
+                auto nearby = FindHosts(false, true, true, true);
+
+                ArrayList<Point> shootable;
+                bool has_target = false;
 
                 for(unsigned i = 0; i < nearby.size(); i++) {
                     const auto host = nearby[i];
@@ -182,23 +255,35 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
                         res = bot_.Scan();
 
                         if(res.tile.IsHost() && host.x == res.hit_x && host.y == res.hit_y) {
-                            CaptureHostIntent cap(this, host);
-                            cap.Start();
+                            shootable.push_back(host);
 
-                            just_capped.push_back(host);
-
-                            //We hit the current target, so we do not need to continue moving towards it.
-                            if(host == current_target_) {
-                                current_target_ = {-1, -1};
-                                intents_.clear();
-                            }
+                            has_target |= host == current_target_;
                         }
 
                     }
                 }
 
-            }
+                if(has_target) {
+                    current_target_ = {-1, -1};
+                    //intents_.clear();
+                    --takeovers_in_base_;
+                }
 
+                const auto map = bot_.get_map();
+                for(unsigned i = 0; i < shootable.size(); i++) {
+                    const auto host = shootable[i];
+                    const int num_times = map.at(host).IsEnemy() ? 2 : 1;
+
+                    recently_capped_.push_back(host);
+                    recently_capped_start_ = *TIMER;
+
+                    intents_.push_front(new CaptureHostIntent(this, host));
+                    intents_.push_front(new WaitForBytecoinsIntent(this, kCostShoot * (num_times + 1)));
+
+                    ++takeovers_in_base_;
+                }
+
+            }
 
         }
 
@@ -209,17 +294,28 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
 
-        if(!attacking_first_base_) {
+        if(moving_bases_) {
+            moving_bases_ = false;
+            takeovers_in_base_ = 0;
+        }
+
+        if(*TIMER - recently_capped_start_ > 10000 / (kMaxVel * 15) * 20 * kTileSize)
+            recently_capped_.clear();
+
+        //Detect if we are fighting for the base. Give up and go to the next if so.
+        if(!attacking_first_base_ && takeovers_in_base_ < 3 * kNumBases) {
             //Check if there are more hosts to shoot in our current base.
             const auto map = bot_.get_map();
+
+            const int indicies[2][4] = {{0, 2, 3, 1}, {3, 2, 0, 1}};
 
             for(unsigned i = 0; i < kNumBases; i++) {
                 //Iterate through the hosts in the base in the appropriate direction to not make
                 //unnecessary movements.
-                const auto host = bases_[current_base_][current_direction_ == COUNTERCLOCKWISE ? i : kNumBases - i - 1];
+                const auto host = bases_[current_base_][indicies[current_direction_][i]];
                 const auto tile = map.at(host);
 
-                if(tile.IsHost() && !tile.IsFriendly() && !just_capped.contains(host)) {
+                if(tile.IsHost() && !tile.IsFriendly() && !recently_capped_.contains(host)) {
                     AttackHost(host);
                     return;
                 }

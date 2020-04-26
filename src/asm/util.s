@@ -18,3 +18,6 @@ __sleep_loop:
     bgt $a0, 0, __sleep_loop    #blt and bgt pseudo inst takes 2 cycles
 __sleep_done:
     jr $ra
+
+atexit:
+    jr $ra

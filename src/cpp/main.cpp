@@ -18,6 +18,8 @@ void init() {
     memmgr_init();
 }
 
+extern "C" {
+
 int main() {
     init();
 
@@ -26,4 +28,6 @@ int main() {
     controller.Start();
 
     return 0;
+}
+
 }

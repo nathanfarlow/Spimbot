@@ -16,4 +16,8 @@ extern "C" {
     //in util.s
     void set_status_reg(uint32_t val);
     void sleep(uint32_t cycles);
+
+    //For some reason the compiler puts this call in to deallocate
+    //static variables. It's just a nop in util.s
+    void atexit();
 }

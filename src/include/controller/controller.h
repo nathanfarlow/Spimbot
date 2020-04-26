@@ -24,10 +24,10 @@ private:
 
     //listed in counter clockwise order, these are the hosts in each base
     Point bases_[kNumBases][kHostsPerBase] = {
-            {{14, 14}, {13, 5}, {7,  7}, {5,  13}},     //North west
-            {{2,  26}, {12, 27}, {6,  33}, {13, 37}},   //South west
-            {{25, 25}, {26, 34}, {32, 32}, {34, 26}},   //South east
-            {{37, 13}, {27, 12}, {33, 6}, {26, 2}}      //North east
+            {{13, 5}, {7,  7}, {14, 14}, {5,  13}},     //North west
+            {{2,  26}, {6,  33}, {12, 27}, {13, 37}},   //South west
+            {{26, 34}, {32, 32}, {25, 25}, {34, 26}},   //South east
+            {{37, 13}, {33, 6}, {27, 12}, {26, 2}}      //North east
     };
 
     enum {
@@ -58,8 +58,10 @@ private:
     int ComputeBaseScore(int base);
     void SetNextBase();
 
+    unsigned takeovers_in_base_;
+
     Point current_target_;
-    bool attacking_first_base_;
+    bool attacking_first_base_, moving_bases_;
 
 public:
     Controller(Spimbot &bot)
