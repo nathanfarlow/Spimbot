@@ -44,14 +44,12 @@ void Controller::Pathfind(const Point &to, unsigned hunt_interval) {
 
     unsigned i = 0;
     while(!path.empty()) {
+        const auto point = path.pop_front();
+        intents_.push_back(new LineMoveIntent(this, point, kMaxVel));
 
-        //Always scan before moving and if it is the appropriate interval
         if(i++ % hunt_interval == 0) {
             intents_.push_back(new HuntOpponentIntent(this));
         }
-
-        const auto point = path.pop_front();
-        intents_.push_back(new LineMoveIntent(this, point, kMaxVel));
     }
 
     pathfind_prev_to_ = to;
@@ -76,8 +74,6 @@ inline int DoMod(int val, int mod) {
 int Controller::ComputeBaseScore(int base) {
     int score = 0;
 
-    printf("Contemplating %d\n", base);
-
     const auto map = bot_.get_map();
 
     for(const auto &host : bases_[base]) {
@@ -92,7 +88,7 @@ void Controller::SetNextBase() {
 
     int potential[] = {
             DoMod(current_base_ + -2 * current_direction_ + 1, kNumBases), //counterclockwise
-            DoMod(current_base_ + 2 * current_direction_ - 1, kNumBases) //clockwise
+            DoMod(current_base_ + 2 * current_direction_ - 1, kNumBases), //clockwise
     };
 
     int scores[] = {
@@ -147,7 +143,20 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
             //Clear the intent queue and regenerate positions
 
             if(bot_.IsRespawn()) {
-                //TODO: set current base to nearest.
+                //Detect the base that we respawned in.
+                const Point respawn_tile = PixelToTiles(bot_.get_pos());
+                bool found = false;
+
+                for(int i = 0; i < kNumBases && !found; i++) {
+                    for(const auto &host : bases_[i]) {
+                        if(host == respawn_tile) {
+                            current_base_ = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
             }
 
             //If we are just bonked (shouldn't happen), we'll just clear and recompute paths
