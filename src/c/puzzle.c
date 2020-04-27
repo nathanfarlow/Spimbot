@@ -8,7 +8,7 @@
 typedef struct Puzzle LightsOut;
 
 typedef struct Board {
-    LightsOut *lightsout;
+    LightsOut lightsout;
     unsigned char moves[256];
 } Board;
 
@@ -32,17 +32,16 @@ size_t key_hash(void *key) {
 }
 
 void value_free(void *value) {
-    Board *board = (Board *)value;
-    free(board->lightsout);
-    free(board);
+    free(value);
 }
 
 int solve_breadth_first(LightsOut *puzzle, unsigned char *solution) {
     Board *init = calloc(sizeof(Board), 1);
-    init->lightsout = puzzle;
+	memcpy(&init->lightsout, puzzle, sizeof(LightsOut));
     list *queue = list_new();
     push_back(queue, init);
     hdict *hd = hdict_new(256, key_equiv, key_hash, value_free);
+	hdict_insert(hd, &init->lightsout, init);
 
     Board *current_puzzle;
     int num_rows = puzzle->num_rows;
@@ -53,25 +52,24 @@ int solve_breadth_first(LightsOut *puzzle, unsigned char *solution) {
         for (unsigned row = 0; row < num_rows; row++) {
             for (unsigned col = 0; col < num_cols; col++) {
                 for (unsigned char color = 1; color < num_colors; color++) {
-                    toggle_light_given(row, col, current_puzzle->lightsout, color);
+                    toggle_light_given(row, col, &current_puzzle->lightsout, color);
                     current_puzzle->moves[row * num_cols + col] = (current_puzzle->moves[row * num_cols + col] + color) % num_colors;
-                    if (board_done_given(num_rows, num_cols, current_puzzle->lightsout->board)) {
+                    if (board_done_given(num_rows, num_cols, current_puzzle->lightsout.board)) {
                         memcpy(solution, &current_puzzle->moves, num_rows * num_cols);
                         hdict_free(hd);
                         list_free(queue, NULL);
                         return 0;
                     }
 
-                    if (!hdict_lookup(hd, current_puzzle->lightsout)) {
+                    if (!hdict_lookup(hd, &current_puzzle->lightsout)) {
                         Board *attempt = malloc(sizeof(Board));
-                        attempt->lightsout = malloc(sizeof(LightsOut));
-                        memcpy(attempt->lightsout, current_puzzle->lightsout, sizeof(LightsOut));
+                        memcpy(&attempt->lightsout, &current_puzzle->lightsout, sizeof(LightsOut));
                         memcpy(&attempt->moves, &current_puzzle->moves, 256);
-                        hdict_insert(hd, attempt->lightsout, attempt);
+                        hdict_insert(hd, &attempt->lightsout, attempt);
                         push_back(queue, attempt);
                     }
 
-					toggle_light_given(row, col, current_puzzle->lightsout, num_colors - color);
+					toggle_light_given(row, col, &current_puzzle->lightsout, num_colors - color);
                     current_puzzle->moves[row * num_cols + col] = (current_puzzle->moves[row * num_cols + col] + (num_colors - color)) % num_colors;
                 }
             }
