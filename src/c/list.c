@@ -1,35 +1,51 @@
-#include "util/c-queue.h"
+#include "util/c-list.h"
 
-queue *queue_new() {
-	queue *Q = malloc(sizeof(queue));
-	node *p = malloc(sizeof(node));
-	p->data = NULL;
-	Q->front = p;
-	Q->back = p;
-	return Q;
+list *list_new() {
+    list *Q = malloc(sizeof(list));
+    node *p = malloc(sizeof(node));
+    p->data = NULL;
+    Q->front = p;
+    Q->back = p;
+    return Q;
 }
 
-void enq(queue *Q, void *x) {
-	Q->back->data = x;
-	Q->back->next = malloc(sizeof(node));
-	Q->back = Q->back->next;
+void push_back(list *Q, void *x) {
+    Q->back->data = x;
+    Q->back->next = malloc(sizeof(node));
+    Q->back = Q->back->next;
 }
 
-void *deq(queue *Q) {
-	void *x = Q->front->data;
-	node *q = Q->front;
-	Q->front = Q->front->next;
-	free(q);
-	return x;
+void push_front(list *Q, void *x) {
+    node *new = malloc(sizeof(node));
+    new->data = x;
+    new->next = Q->front;
+    Q->front = new;
 }
 
-void queue_free(queue *Q, void (*elem_free)(void *)) {
-	while (Q->front != Q->back) {
-		node *p = Q->front;
-		if (elem_free) (*elem_free)(p->data);
-		Q->front = Q->front->next;
-		free(p);
-	}
-	free(Q->front);
-	free(Q);
+void *pop_front(list *Q) {
+    void *x = Q->front->data;
+    node *q = Q->front;
+    Q->front = Q->front->next;
+    free(q);
+    return x;
+}
+
+void list_free(list *Q, void (*elem_free)(void *)) {
+    if (elem_free) {
+        while (Q->front != Q->back) {
+            node *p = Q->front;
+            elem_free(p->data);
+            Q->front = Q->front->next;
+            free(p);
+        }
+    }
+    else {
+        while (Q->front != Q->back) {
+            node *p = Q->front;
+            Q->front = Q->front->next;
+            free(p);
+        }
+    }
+    free(Q->front);
+    free(Q);
 }

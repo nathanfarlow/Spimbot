@@ -3,7 +3,7 @@
 OUTFILE = ../spimbot.s
 
 #Place all your source files here
-SRC = $(wildcard cpp/*.c) $(wildcard cpp/*.cpp) $(wildcard cpp/*/*.c) $(wildcard cpp/*/*.cpp) #$(wildcard src/*.m)
+SRC = $(wildcard cpp/*.c c/*.c) $(wildcard cpp/*.cpp) $(wildcard cpp/*/*.c) $(wildcard cpp/*/*.cpp) #$(wildcard src/*.m)
 
 #Make sure you build libc first.
 ASM_INCLUDE = $(wildcard asm/*.s) ${CSPIM}/lib/libc/libc.s

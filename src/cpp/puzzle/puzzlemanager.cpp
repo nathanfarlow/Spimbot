@@ -5,11 +5,6 @@
 #include "definitions.h"
 #include "controller/controller.h"
 
-extern "C" {
-    //Code is in puzzle_sol.s
-    void solve(volatile Puzzle *puzzle, Solution *solution, int row, int col);
-}
-
 void PuzzleManager::Request() {
     if(has_puzzle_ || requesting_)
         return;
@@ -46,7 +41,10 @@ void PuzzleManager::Solve() {
     const unsigned start = *TIMER;
 #endif
 
-    solve(&puzzle_, &solution_, 0, 0);
+    //SolvePuzzleReduction((Puzzle*)&puzzle_, &solution_);
+    //solve_given((Puzzle*) &puzzle_, solution_.data, 0, 0);
+    //solve_breadth_first((Puzzle*)&puzzle_, solution_.data);
+    solve_chase_lights((Puzzle*)&puzzle_, solution_.data);
 
 #ifdef PUZZLE_DEBUG
     const unsigned end = *TIMER;

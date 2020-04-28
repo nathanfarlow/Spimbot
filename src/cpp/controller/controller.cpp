@@ -20,18 +20,9 @@ void Controller::Start() {
 
     while(true) {
 
-#ifdef PUZZLE_DEBUG
-        const unsigned start = *TIMER;
-#endif
-
         while(!puzzle_manager_.HasPuzzle()) {
             puzzle_manager_.Request();
         }
-
-#ifdef PUZZLE_DEBUG
-        const unsigned end = *TIMER;
-        printf("Waited %u cycles for puzzle.\n", end - start);
-#endif
         
         puzzle_manager_.Solve();
     }
