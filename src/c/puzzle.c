@@ -52,9 +52,9 @@ int solve_breadth_first(LightsOut *puzzle, unsigned char *solution) {
         for (unsigned row = 0; row < num_rows; row++) {
             for (unsigned col = 0; col < num_cols; col++) {
                 for (unsigned char color = 1; color < num_colors; color++) {
-                    toggle_light_given(row, col, &current_puzzle->lightsout, color);
+                    toggle_light(row, col, &current_puzzle->lightsout, color);
                     current_puzzle->moves[row * num_cols + col] = (current_puzzle->moves[row * num_cols + col] + color) % num_colors;
-                    if (board_done_given(num_rows, num_cols, current_puzzle->lightsout.board)) {
+                    if (board_done(num_rows, num_cols, current_puzzle->lightsout.board)) {
                         memcpy(solution, &current_puzzle->moves, num_rows * num_cols);
                         hdict_free(hd);
                         list_free(queue, NULL);
@@ -69,7 +69,7 @@ int solve_breadth_first(LightsOut *puzzle, unsigned char *solution) {
                         push_back(queue, attempt);
                     }
 
-					toggle_light_given(row, col, &current_puzzle->lightsout, num_colors - color);
+					toggle_light(row, col, &current_puzzle->lightsout, num_colors - color);
                     current_puzzle->moves[row * num_cols + col] = (current_puzzle->moves[row * num_cols + col] + (num_colors - color)) % num_colors;
                 }
             }

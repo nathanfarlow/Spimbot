@@ -43,7 +43,8 @@ void PuzzleManager::Solve() {
 
     //SolvePuzzleReduction((Puzzle*)&puzzle_, &solution_);
     //solve_given((Puzzle*) &puzzle_, solution_.data, 0, 0);
-    solve_breadth_first((Puzzle*)&puzzle_, solution_.data);
+    //solve_breadth_first((Puzzle*)&puzzle_, solution_.data);
+    solve_chase_lights((Puzzle*)&puzzle_, solution_.data);
 
 #ifdef PUZZLE_DEBUG
     const unsigned end = *TIMER;

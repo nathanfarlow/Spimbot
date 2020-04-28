@@ -3,10 +3,10 @@
 
 //Copied from puzzle_sol.s
 
-void toggle_light_given(int row, int col, struct Puzzle* puzzle, int action_num){
-    int num_rows = puzzle->num_rows;
-    int num_cols = puzzle->num_cols;
-    int num_colors = puzzle->num_colors;
+void toggle_light(int row, int col, struct Puzzle* puzzle, int action_num){
+    const int num_rows = puzzle->num_rows;
+    const int num_cols = puzzle->num_cols;
+    const int num_colors = puzzle->num_colors;
     unsigned char* board = (puzzle-> board);
     board[row*num_cols + col] = (board[row*num_cols + col] + action_num) % num_colors;
     if (row > 0){
@@ -26,7 +26,7 @@ void toggle_light_given(int row, int col, struct Puzzle* puzzle, int action_num)
 }
 
 // it just checks if all lights are off
-bool board_done_given(int num_rows, int num_cols, const unsigned char* board){
+bool board_done(int num_rows, int num_cols, const unsigned char* board){
     for (int row = 0; row < num_rows; row++) {
         for (int col = 0; col < num_cols; col++) {
             if (board[(row)*num_cols + col] != 0) {
@@ -43,27 +43,27 @@ bool solve_given(struct Puzzle* puzzle, unsigned char* solution, int row, int co
     int num_colors = puzzle->num_colors;
     int next_row = ((col == num_cols-1) ? row + 1 : row);
     if (row >= num_rows || col >= num_cols) {
-         return board_done_given(num_rows, num_cols, puzzle->board);
+         return board_done(num_rows, num_cols, puzzle->board);
     }
     if (row != 0) {
         int actions = (num_colors - puzzle->board[(row-1)*num_cols + col]) % num_colors;
         solution[row*num_cols + col] = actions;
-        toggle_light_given(row, col, puzzle, actions);
+        toggle_light(row, col, puzzle, actions);
         if (solve_given(puzzle, solution, next_row, (col + 1) % num_cols)) {
             return true;
         }
         solution[row*num_cols + col] = 0;
-        toggle_light_given(row, col, puzzle, num_colors - actions);
+        toggle_light(row, col, puzzle, num_colors - actions);
         return false;
     }
 
     for(char actions = 0; actions < num_colors; actions++) {
         solution[row*num_cols + col] = actions;
-        toggle_light_given(row, col, puzzle, actions);
+        toggle_light(row, col, puzzle, actions);
         if (solve_given(puzzle, solution, next_row, (col + 1) % num_cols)) {
             return true;
         }
-        toggle_light_given(row, col, puzzle, num_colors - actions);
+        toggle_light(row, col, puzzle, num_colors - actions);
         solution[row*num_cols + col] = 0;
     }
     return false;
