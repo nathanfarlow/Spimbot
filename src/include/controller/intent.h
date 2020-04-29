@@ -7,7 +7,7 @@
 class AbstractController;
 
 enum class IntentType {
-    WAIT_PUZZLE, LINE_MOVE
+    WAIT_BYTECOINS, LINE_MOVE
 };
 
 class Intent {
@@ -48,19 +48,24 @@ public:
     IntentType get_type()           const {return type_;}
 };
 
-class WaitForPuzzleIntent : public Intent {
+//Wait until we have a minimum number of bytecoins.
+//If interrupted, that means successful.
+class WaitForBytecoinsIntent : public Intent {
+private:
+    const unsigned min_bytecoins_;
 public:
-    WaitForPuzzleIntent(AbstractController *controller, unsigned max_wait)
-        : Intent(IntentType::WAIT_PUZZLE, controller, true) {
+    WaitForBytecoinsIntent(AbstractController *controller, unsigned min_bytecoins, unsigned max_wait = kNumGameCycles * 100)
+            : Intent(IntentType::WAIT_BYTECOINS, controller, true),
+              min_bytecoins_(min_bytecoins) {
         duration_ = max_wait;
     }
 
-    WaitForPuzzleIntent(AbstractController *controller)
-        : WaitForPuzzleIntent(controller, kNumGameCycles * 100) {}
-
     void Start() {start_ = *TIMER; running_ = true;}
     void Stop()  {running_ = false;}
+
+    unsigned get_min_bytecoins() {return min_bytecoins_;}
 };
+
 
 //Intention to move in a straight line
 class LineMoveIntent : public Intent {

@@ -5,7 +5,7 @@
 #include "util/list/list.h"
 #include "intent.h"
 
-#include "pathfinder.h"
+#include "mappathfinder.h"
 
 constexpr unsigned kMaxIntents = 512;
 
@@ -16,15 +16,12 @@ private:
 
     List<Intent*> intents_;
 
-    AStar pathfinder_;
-
     void Strategize(bool first_run, bool is_resuming_async);
 
 public:
     Controller(Spimbot &bot)
         : AbstractController(bot),
-          puzzle_manager_(this),
-          pathfinder_(bot.get_map()) {}
+          puzzle_manager_(this) {}
 
     void Start() override;
     void OnTimer(bool first_run) override;
