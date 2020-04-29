@@ -28,7 +28,7 @@ unsigned char* cache_lookup[2][7][17] = {
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 };
 
-inline unsigned pow(unsigned base, unsigned exponent) {
+inline unsigned pow_fast(unsigned base, unsigned exponent) {
     static const unsigned pow_table__[2][20] = {
         {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288},
         {1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683, 59049, 177147, 531441, 1594323, 4782969, 14348907, 43046721, 129140163, 387420489, 1162261467}
@@ -36,11 +36,11 @@ inline unsigned pow(unsigned base, unsigned exponent) {
     return pow_table__[base - 2][exponent];
 }
 
-static int RowToIndex(unsigned char *row, int cols, int num_colors) {
-    int accum = 0;
+static unsigned RowToIndex(const unsigned char *row, int cols, int num_colors) {
+    unsigned accum = 0;
 
     for(int i = 0; i < cols; i++) {
-        accum += row[i] * pow(num_colors, cols - i - 1);
+        accum += row[i] * pow_fast(num_colors, cols - i - 1);
     }
 
     return accum;

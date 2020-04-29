@@ -1,9 +1,9 @@
-#include "controller/pathfinder.h"
+#include "controller/mappathfinder.h"
 
 #include "definitions.h"
 #include "util/util.h"
 
-List<Point> AStar::FindPath(const Point &from_pixel, const Point &to_pixel) {
+List<Point> AStarMap::FindPath(const Point &from_pixel, const Point &to_pixel) {
 
     //The tiles that correspond to the pixel coordinates
     const Point from = {from_pixel.x / kTileSize, from_pixel.y / kTileSize};
@@ -104,7 +104,7 @@ List<Point> AStar::FindPath(const Point &from_pixel, const Point &to_pixel) {
     return OptimizeAndConvert(path, from_pixel, to_pixel);
 }
 
-List<Point> AStar::OptimizeAndConvert(List<Point> &path, const Point &start_pixel, const Point &final_destination) {
+List<Point> AStarMap::OptimizeAndConvert(List<Point> &path, const Point &start_pixel, const Point &final_destination) {
 
     List<Point> optimized;
 
