@@ -1,0 +1,8 @@
+
+#include "controller/graph.h"
+
+template <typename T>
+List<Node<T>*> AStar<T>::FindPath(const Node<T>* const from, const Node<T>* const to) {
+    List<Node<T>*> ret;
+    return ret;
+}
