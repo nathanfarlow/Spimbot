@@ -26,4 +26,4 @@ run: clean all
 
 debug: clean all
 	#Without the tournament tag, we can use syscalls for printf
-	QtSpimbot -file $(OUTFILE) -file2 ../adversary.s
+	QtSpimbot -debug -file $(OUTFILE) -file2 ../adversary.s

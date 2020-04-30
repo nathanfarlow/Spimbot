@@ -12,6 +12,7 @@
 AbstractController *AbstractController::global;
 
 void Controller::Start() {
+    spin_timer_ = kSpinTimerMax;
 
     //Request puzzle before generating initial logic
     puzzle_manager_.Request();
@@ -28,6 +29,37 @@ void Controller::Start() {
         puzzle_manager_.Solve();
     }
     
+}
+
+void Controller::Spin(int divisions) {
+    int curr_angle = bot_.get_angle();
+    int turn_angle = 360 / divisions;
+    Tile scan_result; 
+
+    for (int i = 0; i < divisions; i++) {
+        bot_.set_angle(turn_angle, Orientation::RELATIVE);
+        scan_result = bot_.Scan().tile;
+        if (scan_result.IsEnemy()) {
+            ShootEnemy();
+            break;
+        }
+    }
+
+    bot_.set_angle(curr_angle, Orientation::ABSOLUTE);
+}
+
+void Controller::ShootEnemy() {
+    // Shoot five beams at the enemy
+    bot_.set_angle(-6, Orientation::RELATIVE);
+    bot_.Shoot();
+    bot_.set_angle(3, Orientation::RELATIVE);
+    bot_.Shoot();
+    bot_.set_angle(3, Orientation::RELATIVE);
+    bot_.Shoot();
+    bot_.set_angle(3, Orientation::RELATIVE);
+    bot_.Shoot();
+    bot_.set_angle(3, Orientation::RELATIVE);
+    bot_.Shoot();
 }
 
 //Populate the intent list
@@ -134,6 +166,14 @@ void Controller::OnTimer(bool first_run) {
 }
 
 void Controller::OnSolve() {
+    if (bot_.get_bytecoins() > 400) {
+        spin_timer_--;
+        if (spin_timer_ == 0) {
+            Spin(50);
+            spin_timer_ = kSpinTimerMax;
+        }
+    }
+
     if(!intents_.empty()) {
         auto front = intents_.front();
 

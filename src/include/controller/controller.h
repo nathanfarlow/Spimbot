@@ -16,6 +16,8 @@ constexpr unsigned kNumBases = 4;
 constexpr unsigned kHostsPerBase = 4;
 constexpr unsigned kNumHosts = kNumBases * kHostsPerBase;
 
+constexpr unsigned kSpinTimerMax = 10;
+
 enum Direction {
     COUNTERCLOCKWISE, CLOCKWISE, NONE
 };
@@ -126,6 +128,11 @@ private:
                 {{184, 118}, CLOCKWISE, 3, {{&bases_[NORTHEAST].hosts[2], 333}, {&bases_[SOUTHEAST].hosts[2], 75}, {&bases_[NORTHWEST].hosts[2], 182}}, 2, {{176, 172}, {202, 128}}}}
             }
     };
+
+    unsigned spin_timer_;
+
+    void Spin(int divisions);
+    void ShootEnemy();
 
 public:
     explicit Controller(Spimbot &bot)
