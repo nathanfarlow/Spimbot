@@ -1,6 +1,7 @@
 #include "controller/controller.h"
 
 #include <stdio.h>
+#include <controller/controller.h>
 
 #include "definitions.h"
 #include "util/util.h"
@@ -45,7 +46,25 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
-        intents_.push_back(new WaitForBytecoinsIntent(this, bot_.get_bytecoins() + kCostShoot));
+
+        auto &node = bases_[current_base_].nodes[current_node_];
+
+        if(prev_node_ != nullptr) {
+            for(unsigned i = 0; i < prev_node_->num_targets; i++) {
+                sleep(10);
+                bot_.set_angle(prev_node_->targets[i].angle, Orientation::ABSOLUTE);
+                bot_.Shoot();
+            }
+        }
+
+        intents_.push_back(new LineMoveIntent(this, node.pos, kMaxVel));
+
+        if(++current_node_ == bases_[current_base_].num_nodes) {
+            current_node_ = 0;
+            current_base_ = (current_base_ + 1) % kNumBases;
+        }
+
+        prev_node_ = &node;
     }
 }
 
@@ -139,7 +158,7 @@ void Controller::OnSolve() {
     class. So including this file from controller.cpp is the workaround.
 */
 #include "intent.cpp_included"
-#include "mappathfinder.cpp_included"
+#include "pathfinder.cpp_included"
 
 extern "C" {
 
