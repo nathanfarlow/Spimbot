@@ -78,9 +78,9 @@ private:
                 {{5, 13}, COUNTERCLOCKWISE, NORTHWEST}},
 
                 3,
-                {{{120, 92}, CLOCKWISE, 2, {{&bases_[NORTHWEST].hosts[1], 208}, {&bases_[NORTHWEST].hosts[2], 99}}, 1, {{200, 228}}},
+                {{{120, 92}, CLOCKWISE, 2, {{&bases_[NORTHWEST].hosts[1], 208}, {&bases_[NORTHWEST].hosts[2], 99}}, 2, {{176, 144}, {224, 204}}},
                 {{68, 68}, NONE, 3, {{&bases_[NORTHWEST].hosts[1], 225}, {&bases_[NORTHWEST].hosts[3], 126}, {&bases_[NORTHWEST].hosts[0], 324}}},
-                {{96, 116}, COUNTERCLOCKWISE, 2, {{&bases_[NORTHWEST].hosts[1], 237}, {&bases_[NORTHWEST].hosts[2], 0}}, 1, {{224, 204}}}}
+                {{96, 116}, COUNTERCLOCKWISE, 2, {{&bases_[NORTHWEST].hosts[1], 237}, {&bases_[NORTHWEST].hosts[2], 0}}, 2, {{144, 176}, {200, 228}}}}
             },
 
             //Southwest
@@ -106,9 +106,9 @@ private:
                 {{34, 26}, COUNTERCLOCKWISE, SOUTHEAST}},
 
                 3,
-                {{{200, 228}, COUNTERCLOCKWISE, 2, {{&bases_[SOUTHEAST].hosts[1], 28}, {&bases_[SOUTHEAST].hosts[2], 279}}, 1, {{200, 228}}},
+                {{{200, 228}, COUNTERCLOCKWISE, 2, {{&bases_[SOUTHEAST].hosts[1], 28}, {&bases_[SOUTHEAST].hosts[2], 279}}, 2, {{144, 176}, {96, 116}}},
                 {{252, 252}, NONE, 3, {{&bases_[SOUTHEAST].hosts[1], 45}, {&bases_[SOUTHEAST].hosts[3], 306}, {&bases_[SOUTHEAST].hosts[0], 144}}},
-                {{224, 204}, CLOCKWISE, 2, {{&bases_[SOUTHEAST].hosts[1], 57}, {&bases_[SOUTHEAST].hosts[2], 180}}, 1, {{224, 204}}}}
+                {{224, 204}, CLOCKWISE, 2, {{&bases_[SOUTHEAST].hosts[1], 57}, {&bases_[SOUTHEAST].hosts[2], 180}}, 2, {{176, 144}, {120, 92}}}}
             },
 
             //Northeast
@@ -119,11 +119,11 @@ private:
                 {{26, 2}, COUNTERCLOCKWISE, NORTHEAST}},
 
                 5,
-                {{{202, 128}, COUNTERCLOCKWISE, 3, {{&bases_[NORTHEAST].hosts[2], 310}, {&bases_[SOUTHEAST].hosts[2], 88}, {&bases_[NORTHWEST].hosts[2], 188}}, 2, {{144, 148}, {184, 118}}},
+                {{{202, 128}, COUNTERCLOCKWISE, 3, {{&bases_[NORTHEAST].hosts[2], 310}, {&bases_[SOUTHEAST].hosts[2], 88}, {&bases_[NORTHWEST].hosts[2], 188}}, 2, {{176, 172}, {136, 202}}},
                 {{248, 88}, NONE, 3, {{&bases_[NORTHEAST].hosts[2], 157}, {&bases_[NORTHEAST].hosts[0], 21}, {&bases_[NORTHEAST].hosts[3], 242}}},
                 {{264, 88}, NONE, 3, {{&bases_[NORTHEAST].hosts[1], 276}, {&bases_[NORTHEAST].hosts[0], 29}, {&bases_[NORTHEAST].hosts[2], 165}}},
                 {{248, 88}, NONE, 3, {{&bases_[NORTHEAST].hosts[2], 157}, {&bases_[NORTHEAST].hosts[0], 21}, {&bases_[NORTHEAST].hosts[3], 242}}},
-                {{184, 118}, CLOCKWISE, 3, {{&bases_[NORTHEAST].hosts[2], 333}, {&bases_[SOUTHEAST].hosts[2], 75}, {&bases_[NORTHWEST].hosts[2], 182}}, 2, {{176, 172}, {202, 128}}}}
+                {{184, 118}, CLOCKWISE, 3, {{&bases_[NORTHEAST].hosts[2], 333}, {&bases_[SOUTHEAST].hosts[2], 75}, {&bases_[NORTHWEST].hosts[2], 182}}, 2, {{144, 148}, {118, 192}}}}
             }
     };
 

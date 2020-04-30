@@ -46,7 +46,6 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
     //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
-
         auto &node = bases_[current_base_].nodes[current_node_];
 
         if(prev_node_ != nullptr) {
