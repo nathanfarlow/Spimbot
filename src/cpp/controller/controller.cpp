@@ -33,37 +33,67 @@ void Controller::Start() {
 //Populate the intent list
 void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
+    const auto map = bot_.get_map();
+
+    if(first_run) {
+        current_direction_ = entropy_ % 2;
+
+        current_base_ = next_base_ = bot_.get_pos().x > 100 ? SOUTHEAST : NORTHWEST;
+        current_node_ = next_node_ = 1;
+
+        intents_.push_back(new LineMoveIntent(this, bases_[next_base_].nodes[next_node_].pos, kMaxVel));
+    }
+
     if(is_resuming_async) {
         auto finished = intents_.pop_front();
 
         if(finished->WasInterrupted()) {
-            //Clear the intent queue and regenerate positions
+            //We respawned or got bonked. Handle accordingly.
             intents_.clear();
         }
 
         delete finished;
     }
 
-    //If we finished the previous batch of intents, start a new one
     if(intents_.empty()) {
-        auto &node = bases_[current_base_].nodes[current_node_];
+        //We just arrived at our new node destination.
+        current_base_ = next_base_;
+        current_node_ = next_node_;
 
-        if(prev_node_ != nullptr) {
-            for(unsigned i = 0; i < prev_node_->num_targets; i++) {
+        const auto &node = bases_[current_base_].nodes[current_node_];
+
+        for(unsigned i = 0; i < node.num_targets; i++) {
+            const auto tile = map.at(node.targets[i].host->tile_pos);
+            const auto num_times = tile.IsEnemy() ? 2 : tile.IsNeutral() ? 1 : 0;
+
+            bot_.set_angle(node.targets[i].angle, Orientation::ABSOLUTE);
+            for(auto j = 0; j < num_times; j++) {
+                //For some reason shots too quick don't register.
                 sleep(10);
-                bot_.set_angle(prev_node_->targets[i].angle, Orientation::ABSOLUTE);
                 bot_.Shoot();
             }
+
         }
 
-        intents_.push_back(new LineMoveIntent(this, node.pos, kMaxVel));
-
-        if(--current_node_ < 0) {
-            if(--current_base_ < 0) current_base_ = kNumBases - 1;
-            current_node_ = bases_[current_base_].num_nodes - 1;
+        switch(current_direction_) {
+            case COUNTERCLOCKWISE:
+                next_node_ = (next_node_ + 1) % bases_[current_base_].num_nodes;
+                if(next_node_ == 0) next_base_ = (current_base_ + 1) % kNumBases;
+                break;
+            case CLOCKWISE:
+                next_node_ -= 1;
+                if(next_node_ < 0) {
+                    next_base_ = DoMod(next_base_ - 1, kNumBases);
+                    next_node_ = bases_[next_base_].num_nodes - 1;
+                }
+                break;
+            case NONE:
+                //Go to the opposite node.
+                break;
         }
 
-        prev_node_ = &node;
+        //TODO: Break up and add scanning
+        intents_.push_back(new LineMoveIntent(this, bases_[next_base_].nodes[next_node_].pos, kMaxVel));
     }
 }
 

@@ -67,8 +67,11 @@ private:
     void Strategize(bool first_run, bool is_resuming_async);
     void Schedule(bool first_run);
 
-    int current_base_ = 0, current_node_ = 1;
-    Node *prev_node_ = nullptr;
+    int current_base_, current_node_;
+    int next_base_, next_node_;
+    int current_direction_;
+
+    unsigned char entropy_ = 0x70;
 
     Base bases_[kNumBases] = {
             //Northwest

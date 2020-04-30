@@ -1,3 +1,4 @@
+#include <util/util.h>
 
 template <typename T>
 Matrix<T> &Matrix<T>::operator=(const Matrix &other)  {
@@ -48,10 +49,6 @@ size_t FindPivot(Matrix<T> &matrix, size_t start_row, size_t pivot_col) {
     }
 
     return -1;
-}
-
-inline int DoMod(int val, int mod) {
-    return (val % mod + mod) % mod;
 }
 
 template <typename T>

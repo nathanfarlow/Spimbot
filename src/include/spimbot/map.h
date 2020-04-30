@@ -29,4 +29,5 @@ struct Tile {
 
 struct Map {
     Tile tiles[kNumTiles][kNumTiles];
+    Tile at(const Point &p) const {return tiles[p.y][p.x];}
 };
