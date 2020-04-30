@@ -43,7 +43,7 @@ public:
     virtual unsigned get_duration() const {return duration_;}
 
     virtual bool IsRunning()        const {return running_;}
-    virtual bool WasInterrupted()   const {return interrupted_;}
+    virtual bool WasInterrupted()   const {return has_bonk_interrupt || has_respawn_interrupt || interrupted_;}
 
     IntentType get_type()           const {return type_;}
 };
@@ -85,6 +85,4 @@ public:
 
     void Start() override;
     void Stop()  override;
-
-    bool WasInterrupted() const override;
 };

@@ -25,9 +25,3 @@ void LineMoveIntent::Stop() {
     controller_->get_bot().set_velocity(0);
     running_ = false;
 }
-
-bool LineMoveIntent::WasInterrupted() const {
-    return controller_->get_bot().IsBonked()
-        || controller_->get_bot().IsRespawn()
-        || Intent::WasInterrupted();
-}

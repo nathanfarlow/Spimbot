@@ -22,7 +22,7 @@ public:
     }
 
     virtual void Start() = 0;
-    virtual void OnTimer(bool first_run) = 0;
+    virtual void Interrupt() = 0;
 
     Spimbot &get_bot() {return bot_;}
 };

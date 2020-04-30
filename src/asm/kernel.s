@@ -17,11 +17,12 @@ RESPAWN_ACK             = 0xffff00f0
 has_bonk_interrupt:             .byte 0
 has_request_puzzle_interrupt:   .byte 0
 has_respawn_interrupt:          .byte 0
+has_timer_interrupt:            .byte 0
 
 .kdata
 
 .ktext 0x80000180
-interrupt_handler:
+kernel_interrupt_handler:
 
     #Save at, eret, and coprocessor1 registers. Use the stack pointer because a
     #good interrupt handler should be able to interrupt itself. We may experience
@@ -49,11 +50,13 @@ interrupt_dispatch:                 #Interrupt:
     mfc0    $k0, $13                #Get Cause register, again
     beq     $k0, 0, done            #handled all outstanding interrupts
 
-    and     $k1, $k0, BONK_INT_MASK
-    bne     $k1, 0, bonk_interrupt
-
     and     $k1, $k0, REQUEST_PUZZLE_INT_MASK
     bne     $k1, 0, request_puzzle_interrupt
+
+    #The following interrupts trigger the invocation of our interrupt
+    #handler in C land
+    and     $k1, $k0, BONK_INT_MASK
+    bne     $k1, 0, bonk_interrupt
 
     and     $k1, $k0, RESPAWN_INT_MASK
     bne     $k1, 0, respawn_interrupt
@@ -63,11 +66,7 @@ interrupt_dispatch:                 #Interrupt:
 
     j       done
 
-bonk_interrupt:
-    sw      $0, BONK_ACK
-    li      $k0, 1
-    sb      $k0, has_bonk_interrupt
-    j       interrupt_dispatch      #check if other interrupts are waiting
+
 
 request_puzzle_interrupt:
     sw      $0, REQUEST_PUZZLE_ACK
@@ -75,15 +74,24 @@ request_puzzle_interrupt:
     sb      $k0, has_request_puzzle_interrupt
     j       interrupt_dispatch
 
+bonk_interrupt:
+    sw      $0, BONK_ACK
+    li      $k0, 1
+    sb      $k0, has_bonk_interrupt
+    j       ret_to_c
+
 respawn_interrupt:
     sw      $0, RESPAWN_ACK
     li      $k0, 1
     sb      $k0, has_respawn_interrupt
-    j       interrupt_dispatch
+    j       ret_to_c
 
 timer_interrupt:
     sw      $0, TIMER_ACK
+    li      $k0, 1
+    sb      $k0, has_timer_interrupt
 
+ret_to_c:
     sub     $sp, $sp, 124
 
     #sw      $1 0($sp) #Already saved at
@@ -123,12 +131,12 @@ timer_interrupt:
     #solver should be interrupted by the timer.
 
     #Jump to handler in external C land
-    la      $ra, timer_ret
-    la      $k0, timer_interrupt_handler
+    la      $ra, c_ret
+    la      $k0, interrupt_handler
     mtc0    $k0, $14    #Write EPC
     eret
     
-timer_ret:
+c_ret:
 
     #lw      $1 0($sp)
     lw      $2 4($sp)

@@ -17,7 +17,7 @@ void Controller::Start() {
     puzzle_manager_.Request();
 
     //Call OnTimer() to initialize starting logic
-    OnTimer(true);
+    Schedule(true);
 
     while(true) {
 
@@ -58,9 +58,9 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
         intents_.push_back(new LineMoveIntent(this, node.pos, kMaxVel));
 
-        if(++current_node_ == bases_[current_base_].num_nodes) {
-            current_node_ = 0;
-            current_base_ = (current_base_ + 1) % kNumBases;
+        if(--current_node_ < 0) {
+            if(--current_base_ < 0) current_base_ = kNumBases - 1;
+            current_node_ = bases_[current_base_].num_nodes - 1;
         }
 
         prev_node_ = &node;
@@ -71,7 +71,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
 This is where the strategizing happens. We update our bot
 and then when we return, the puzzle continues to solve_given
 */
-void Controller::OnTimer(bool first_run) {
+void Controller::Schedule(bool first_run) {
 
     //Check for expired async events, but leave it up to
     //Strategize() to remove them in case they were interrupted
@@ -112,7 +112,7 @@ void Controller::OnTimer(bool first_run) {
                 if(duration < kMinCycles) {
                     //Just wait for it to terminate synchronously and call ourselves as if there was an interrupt
                     sleep(duration - current->get_start() + *TIMER);
-                    OnTimer(false);
+                    Schedule(false);
                 } else {
                     //The approximate number of instructions it takes to handle the timer interrupt
                     //So we can call Stop() on the async intent as accurately as possible
@@ -132,6 +132,11 @@ void Controller::OnTimer(bool first_run) {
 
 }
 
+
+void Controller::Interrupt() {
+    Schedule(false);
+}
+
 void Controller::OnSolve() {
     if(!intents_.empty()) {
         auto front = intents_.front();
@@ -146,10 +151,11 @@ void Controller::OnSolve() {
             //Cancel intent's async timer and simulate a timer interrupt
             //without going through the handler, wasting cycles
             *TIMER = INT_MAX;
-            OnTimer(false); 
+            Interrupt();
         }
     }
 }
+
 
 /*
     Unfortunately due to the limitations in the toolchain right now,
@@ -162,8 +168,8 @@ void Controller::OnSolve() {
 extern "C" {
 
 //This funciton is called by the kernel interrupt handler
-void timer_interrupt_handler() {
-    AbstractController::get_global()->OnTimer(false);
+void interrupt_handler() {
+    AbstractController::get_global()->Interrupt();
 }
 
 }

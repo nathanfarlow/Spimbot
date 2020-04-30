@@ -65,6 +65,7 @@ private:
     List<Intent*> intents_;
 
     void Strategize(bool first_run, bool is_resuming_async);
+    void Schedule(bool first_run);
 
     int current_base_ = 0, current_node_ = 1;
     Node *prev_node_ = nullptr;
@@ -91,7 +92,7 @@ private:
                 {{13, 37}, COUNTERCLOCKWISE, SOUTHWEST}},
 
                 5,
-                {{{118, 192}, CLOCKWISE, 3, {{&bases_[SOUTHWEST].hosts[2], 130}, {&bases_[NORTHWEST].hosts[2], 268}, {&bases_[SOUTHEAST].hosts[2], 8}}, 2, {{144, 148}, {184, 118}}},
+                {{{118, 192}, CLOCKWISE, 3, {{&bases_[SOUTHWEST].hosts[2], 133}, {&bases_[NORTHWEST].hosts[2], 268}, {&bases_[SOUTHEAST].hosts[2], 8}}, 2, {{144, 148}, {184, 118}}},
                 {{72, 232}, NONE, 3, {{&bases_[SOUTHWEST].hosts[2], 337}, {&bases_[SOUTHWEST].hosts[0], 201}, {&bases_[SOUTHWEST].hosts[3], 62}}},
                 {{56, 232}, NONE, 3, {{&bases_[SOUTHWEST].hosts[1], 96}, {&bases_[SOUTHWEST].hosts[0], 209}, {&bases_[SOUTHWEST].hosts[2], 345}}},
                 {{72, 232}, NONE, 3, {{&bases_[SOUTHWEST].hosts[2], 337}, {&bases_[SOUTHWEST].hosts[0], 201}, {&bases_[SOUTHWEST].hosts[3], 62}}},
@@ -133,7 +134,8 @@ public:
           puzzle_manager_(this) {}
 
     void Start() override;
-    void OnTimer(bool first_run) override;
+
+    void Interrupt() override;
 
     //Called when the PuzzleManager solves a puzzle
     void OnSolve();
