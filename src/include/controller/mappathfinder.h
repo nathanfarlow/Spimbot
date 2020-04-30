@@ -8,18 +8,18 @@
 
 #include <math.h>
 
-class MapPathfinder {
+class Pathfinder {
 protected:
     Map map_;
 public:
-    explicit MapPathfinder(const Map &map) : map_(map) {}
+    explicit Pathfinder(const Map &map) : map_(map) {}
 
     //from, to pixel coordinates. List returned is in pixel coordinates
     virtual List<Point> FindPath(const Point &from, const Point &to) = 0;
-    virtual ~MapPathfinder() = default;
+    virtual ~Pathfinder() = default;
 };
 
-class AStarMap : public MapPathfinder {
+class AStar : public Pathfinder {
 private:
 
     struct Node {
@@ -43,7 +43,7 @@ private:
     List<Point> OptimizeAndConvert(List<Point> &path, const Point &start_pixel, const Point &final_destination);
 
 public:
-    explicit AStarMap(Map map) : MapPathfinder(map) {}
+    explicit AStar(Map map) : Pathfinder(map) {}
 
     List<Point> FindPath(const Point &from, const Point &to) override;
 };
