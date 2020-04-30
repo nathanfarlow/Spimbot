@@ -31,8 +31,8 @@ int solve_breadth_first(struct Puzzle *puzzle, unsigned char *solution);
 //Using provided solver. Pretty fast with optimizations.
 bool solve_given(struct Puzzle *puzzle, unsigned char *solution, int row, int col);
 
-//Using chase lights
-void solve_chase_lights(struct Puzzle *puzzle, unsigned char *solution);
+//Using chase lights, return some entropy
+unsigned solve_chase_lights(struct Puzzle *puzzle, unsigned char *solution);
 
 #ifdef __cplusplus
 }

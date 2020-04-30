@@ -67,6 +67,8 @@ private:
     void Strategize(bool first_run, bool is_resuming_async);
     void Schedule(bool first_run);
 
+    Node *GetNearestNode(const Point &pos, int base);
+
     int current_base_, current_node_;
     int next_base_, next_node_;
     int current_direction_;
@@ -137,9 +139,6 @@ public:
           puzzle_manager_(this) {}
 
     void Start() override;
-
     void Interrupt() override;
-
-    //Called when the PuzzleManager solves a puzzle
-    void OnSolve();
+    void OnSolve() override;
 };

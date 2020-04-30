@@ -30,6 +30,23 @@ void Controller::Start() {
     
 }
 
+Node *Controller::GetNearestNode(const Point &pos, int base) {
+    Node *nearest = nullptr;
+    float min_dist = INFINITY;
+
+    for(unsigned i = 0; i < bases_[base].num_nodes; i++) {
+        auto &node = bases_[base].nodes[i];
+        const float dist = pos.DistanceTo(node.pos);
+
+        if(dist < min_dist) {
+            nearest = &node;
+            min_dist = dist;
+        }
+    }
+
+    return nearest;
+}
+
 //Populate the intent list
 void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
@@ -48,11 +65,70 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         auto finished = intents_.pop_front();
 
         if(finished->WasInterrupted()) {
-            //We respawned or got bonked. Handle accordingly.
-            intents_.clear();
+
+            if(bot_.IsBonked()) {
+                //This may happen if our timer is off by a pixel.
+                //Just try again.
+                bot_.ClearBonked();
+                intents_.push_front(finished);
+            } else if(bot_.IsRespawn()) {
+                //Clear everything from the previous strategy.
+                //Reset our current status to the respawned base.
+                //Start moving towards the nearest node in the base
+
+                bot_.ClearRespawn();
+
+                const Point pos = bot_.get_pos();
+                const Point tile_pos = PixelsToTile(pos);
+
+                //haha nested for loop go brrrr
+                bool found = false;
+                for(unsigned i = 0; i < kNumBases && !found; i++) {
+                    for(unsigned j = 0; j < kHostsPerBase; j++) {
+                        if(bases_[i].hosts[j].tile_pos == tile_pos) {
+
+                            unsigned min_node_index = 0;
+                            float min_distance = INFINITY;
+
+                            for(unsigned node_index = 0; node_index < bases_[i].num_nodes; node_index++) {
+                                const auto &node = bases_[i].nodes[node_index];
+
+                                bool has_target = false;
+                                for(unsigned target_index = 0; target_index < node.num_targets; target_index++) {
+                                    if(node.targets[target_index].host == &bases_[i].hosts[j]) {
+                                        has_target = true;
+                                        break;
+                                    }
+                                }
+
+                                if(!has_target) continue;
+
+                                const float dist = pos.DistanceTo(node.pos);
+
+                                if(dist < min_distance) {
+                                    min_node_index = node_index;
+                                    min_distance = dist;
+                                }
+                            }
+
+                            next_base_ = (int)i;
+                            next_node_ = (int)min_node_index;
+
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                intents_.clear();
+                intents_.push_back(new LineMoveIntent(this, bases_[next_base_].nodes[next_node_].pos, kMaxVel));
+
+                delete finished;
+
+                return;
+            }
         }
 
-        delete finished;
     }
 
     if(intents_.empty()) {

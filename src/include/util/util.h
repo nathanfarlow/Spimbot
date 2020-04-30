@@ -9,6 +9,10 @@ inline Point TileToPixels(const Point &point) {
     return {point.x * kTileSize + kTileSize / 2, point.y * kTileSize + kTileSize / 2};
 }
 
+inline Point PixelsToTile(const Point &pixels) {
+    return {pixels.x / kTileSize, pixels.y / kTileSize};
+}
+
 inline int DoMod(int val, int mod) {
     return (val % mod + mod) % mod;
 }

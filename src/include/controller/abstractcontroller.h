@@ -13,6 +13,8 @@ protected:
 
     Intent *current_intent_;
 
+    unsigned entropy_ = 0xCAFEBABE;
+
 public:
     static AbstractController *get_global()                 {return global;}
     static void set_global(AbstractController *controller)  {global = controller;}
@@ -24,5 +26,10 @@ public:
     virtual void Start() = 0;
     virtual void Interrupt() = 0;
 
+    virtual void OnSolve() {}
+
     Spimbot &get_bot() {return bot_;}
+
+    unsigned get_entropy() const {return entropy_;}
+    void set_entropy(unsigned entropy) {entropy_ = entropy;}
 };

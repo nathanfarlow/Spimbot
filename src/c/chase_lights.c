@@ -61,7 +61,7 @@ static void chase_lights(struct Puzzle *puzzle, unsigned char *solution) {
     }
 }
 
-void solve_chase_lights(struct Puzzle *puzzle, unsigned char *solution) {
+unsigned solve_chase_lights(struct Puzzle *puzzle, unsigned char *solution) {
 
     const int num_cols = puzzle->num_cols;
     const int num_rows = puzzle->num_rows;
@@ -80,4 +80,6 @@ void solve_chase_lights(struct Puzzle *puzzle, unsigned char *solution) {
     for(int i = 0; i < num_rows * num_cols; i++) {
         solution[i] = (solution[i] + bottom_solution[i]) % num_colors;
     }
+
+    return (unsigned)bottom_solution + num_cols * num_rows + num_colors;
 }

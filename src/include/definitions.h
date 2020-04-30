@@ -10,7 +10,7 @@ struct Point {
     //for math where intermediate results may be negative.
     int x, y;
 
-    float DistanceTo(const Point &other) {
+    float DistanceTo(const Point &other) const {
         return sqrtf((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
     }
 
