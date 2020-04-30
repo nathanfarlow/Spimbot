@@ -139,7 +139,6 @@ void Controller::OnSolve() {
     class. So including this file from controller.cpp is the workaround.
 */
 #include "intent.cpp_included"
-#include "graph.cpp_included"
 #include "mappathfinder.cpp_included"
 
 extern "C" {

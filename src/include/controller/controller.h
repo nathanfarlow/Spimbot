@@ -5,7 +5,7 @@
 #include "util/list/list.h"
 #include "intent.h"
 
-#include "graph.h"
+#include "mappathfinder.h"
 
 constexpr unsigned kMaxIntents = 512;
 
@@ -18,24 +18,10 @@ private:
 
     void Strategize(bool first_run, bool is_resuming_async);
 
-    //The toolchain does not support lambdas :(
-    class DistanceHeuristic : public AStar<Point>::Heuristic {
-    public:
-        float Compute(const Point &a, const Point &b) const override {
-            return a.DistanceTo(b);
-        }
-    };
-
-    Graph<Point> graph_;
-
-    DistanceHeuristic heuristic_;
-    AStar<Point> pathfinder_;
-
 public:
     Controller(Spimbot &bot)
         : AbstractController(bot),
-          puzzle_manager_(this),
-          pathfinder_(graph_, &heuristic_) {}
+          puzzle_manager_(this) {}
 
     void Start() override;
     void OnTimer(bool first_run) override;
