@@ -67,7 +67,7 @@ private:
     int ScoreForBase(int base, bool include_player);
 
     void HandleRespawn();
-    void Strategize(bool first_run, bool is_resuming_async, bool bonked, bool respawned);
+    void Strategize(bool first_run, bool timer, bool bonked, bool respawned);
     void Schedule(bool first_run);
 
     int current_base_, current_node_;

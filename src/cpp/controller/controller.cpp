@@ -124,8 +124,7 @@ int Controller::ScoreForBase(int base, bool include_player) {
 }
 
 //Populate the intent list
-void Controller::Strategize(bool first_run, bool is_resuming_async, bool bonked, bool respawned) {
-
+void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respawned) {
     const auto map = bot_.get_map();
 
     if(first_run) {
@@ -152,7 +151,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async, bool bonked,
         //put that thing back where it came from or so help me
         intents_.push_back(new LineMoveIntent(this, bases_[current_base_].nodes[current_node_].pos, kMaxVel));
         while(true);
-    } else if(is_resuming_async) {
+    } else if(timer) {
         delete intents_.pop_front();
     }
 
@@ -162,6 +161,9 @@ void Controller::Strategize(bool first_run, bool is_resuming_async, bool bonked,
         current_node_ = next_node_;
 
         const auto &node = bases_[current_base_].nodes[current_node_];
+
+        //TODO: Recompute timer
+        bot_.set_velocity(0);
 
         //Shoot the nodes we can from here
         for(unsigned i = 0; i < node.num_targets; i++) {
@@ -176,6 +178,8 @@ void Controller::Strategize(bool first_run, bool is_resuming_async, bool bonked,
             }
 
         }
+
+        bot_.set_velocity(kMaxVel);
 
         if(attacking_base_) {
             //Go to the next node
@@ -247,7 +251,6 @@ This is where the strategizing happens. We update our bot
 and then when we return, the puzzle continues to solve_given
 */
 void Controller::Schedule(bool first_run) {
-    has_timer_interrupt = false;
 
     bool first_loop = true;
     while(true) {
@@ -262,13 +265,22 @@ void Controller::Schedule(bool first_run) {
             }
         }
 
-        //Populate the intent list
-        Strategize(first_run && first_loop, first_loop && !first_run, has_bonk_interrupt, has_respawn_interrupt);
+        bool prev_respawn_interrupt = has_respawn_interrupt;
+        bool prev_bonk_interrupt = has_bonk_interrupt;
+        bool prev_timer_interrupt = has_timer_interrupt;
 
-        has_bonk_interrupt = false;
         has_respawn_interrupt = false;
+        has_bonk_interrupt = false;
+        has_timer_interrupt = false;
+
+        //Populate the intent list
+        Strategize(first_run && first_loop, prev_timer_interrupt, prev_bonk_interrupt, prev_respawn_interrupt);
 
         first_loop = false;
+
+        if(has_respawn_interrupt || has_bonk_interrupt || has_timer_interrupt) {
+            continue;
+        }
 
         //Consume the intent list
         while(!intents_.empty()) {
@@ -293,7 +305,7 @@ void Controller::Schedule(bool first_run) {
                 if(duration < kMinCycles) {
                     //Just wait for it to terminate synchronously and call ourselves as if there was an interrupt
                     sleep(duration - current->get_start() + *TIMER);
-                    Schedule(false);
+                    continue;
                 } else {
                     //The approximate number of instructions it takes to handle the timer interrupt
                     //So we can call Stop() on the async intent as accurately as possible
