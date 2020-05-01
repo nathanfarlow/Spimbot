@@ -8,6 +8,9 @@
 
 constexpr float kCycleRatio = 10000;
 
+constexpr int kShootAngleStart = 20;
+constexpr int kShootAngleChange = 4;
+
 void LineMoveIntent::Start() {
     duration_ = kCycleRatio / speed_ * controller_->get_bot().get_pos().DistanceTo(to_);
 
@@ -36,6 +39,17 @@ void SpinShootIntent::Start() {
     running_ = true;
 
     int curr_angle = controller_->get_bot().get_angle();
+
+    /*OpponentHintInfo hint = controller->get_bot().get_opponent_hint();
+    int start_angle;
+    int end_angle;
+    if (hint.host_x == -1) {
+        start_angle = 0;
+        end_angle = 360;
+    } else {
+
+    }*/
+
     int turn_angle = 360 / divisions_;
     Tile scan_result; 
 
@@ -43,20 +57,12 @@ void SpinShootIntent::Start() {
         controller_->get_bot().set_angle(turn_angle, Orientation::RELATIVE);
         scan_result = controller_->get_bot().Scan().tile;
         if (scan_result.IsEnemy()) {
-            controller_->get_bot().set_angle(-9, Orientation::RELATIVE);
+            controller_->get_bot().set_angle(-1 * kShootAngleStart, Orientation::RELATIVE);
             controller_->get_bot().Shoot();
-            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
-            controller_->get_bot().Shoot();
-            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
-            controller_->get_bot().Shoot();
-            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
-            controller_->get_bot().Shoot();
-            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
-            controller_->get_bot().Shoot();
-            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
-            controller_->get_bot().Shoot();
-            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
-            controller_->get_bot().Shoot();
+            for (int i = 1; i < 2 * kShootAngleStart; i += kShootAngleChange) {
+                controller_->get_bot().set_angle(kShootAngleChange, Orientation::RELATIVE);
+                controller_->get_bot().Shoot();
+            }
             break;
         }
     }
