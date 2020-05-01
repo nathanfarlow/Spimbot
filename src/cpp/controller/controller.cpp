@@ -30,26 +30,11 @@ void Controller::Start() {
     
 }
 
-Node *Controller::GetNearestNode(const Point &pos, int base) {
-    Node *nearest = nullptr;
-    float min_dist = INFINITY;
-
-    for(unsigned i = 0; i < bases_[base].num_nodes; i++) {
-        auto &node = bases_[base].nodes[i];
-        const float dist = pos.DistanceTo(node.pos);
-
-        if(dist < min_dist) {
-            nearest = &node;
-            min_dist = dist;
-        }
-    }
-
-    return nearest;
-}
-
 void Controller::HandleRespawn() {
     //Reset our current status to the respawned base.
     //Start moving towards the nearest node in the base
+
+    if(!intents_.empty()) intents_.front()->Stop();
 
     const Point pos = bot_.get_pos();
     const Point tile_pos = PixelsToTile(pos);
@@ -104,12 +89,38 @@ void Controller::HandleRespawn() {
 
     const auto &min_node = bases_[next_base_].nodes[next_node_];
 
+    attacking_base_ = min_node.entrance_status == NONE;
+
+    if(min_node.entrance_status != current_direction_)
+        current_direction_ = 1 - current_direction_;
+
     //Interpolate movement according to angle the node shoots the host
     const int x = min_node.pos.x + roundf(min_distance * cosf(angle * M_PI / 180));
     const int y = min_node.pos.y + roundf(min_distance * sinf(angle * M_PI / 180));
 
     intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
     intents_.push_back(new LineMoveIntent(this, min_node.pos, kMaxVel));
+}
+
+int Controller::ScoreForBase(int base, bool include_player) {
+    //A base's score contains hosts can shoot, if opponent is there.
+    const auto map = bot_.get_map();
+    int score = 0;
+
+    const auto hint = bot_.get_opponent_hint();
+
+    for(const auto &host : bases_[base].hosts) {
+        const auto tile = map.at(host.tile_pos);
+
+        //Prioritize bases with not many captured hosts
+        score += tile.IsEnemy() ? 2 : tile.IsNeutral() ? 1 : 0;
+
+        //Try to get closer to opponent
+        if(include_player && host.tile_pos.x == hint.host_x && host.tile_pos.y == hint.host_y)
+            score += 2;
+    }
+
+    return score;
 }
 
 //Populate the intent list
@@ -123,6 +134,8 @@ void Controller::Strategize(bool first_run, bool is_resuming_async, bool bonked,
         current_base_ = next_base_ = bot_.get_pos().x > 100 ? SOUTHEAST : NORTHWEST;
         current_node_ = next_node_ = 1;
 
+        attacking_base_ = true;
+
         intents_.push_back(new LineMoveIntent(this, bases_[next_base_].nodes[next_node_].pos, kMaxVel));
     }
 
@@ -133,6 +146,12 @@ void Controller::Strategize(bool first_run, bool is_resuming_async, bool bonked,
 #ifdef DEBUG
         printf("bonk\n");
 #endif
+        if(!intents_.empty()) intents_.front()->Stop();
+        while(!intents_.empty()) delete intents_.pop_front();
+
+        //put that thing back where it came from or so help me
+        intents_.push_back(new LineMoveIntent(this, bases_[current_base_].nodes[current_node_].pos, kMaxVel));
+        while(true);
     } else if(is_resuming_async) {
         delete intents_.pop_front();
     }
@@ -144,6 +163,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async, bool bonked,
 
         const auto &node = bases_[current_base_].nodes[current_node_];
 
+        //Shoot the nodes we can from here
         for(unsigned i = 0; i < node.num_targets; i++) {
             const auto tile = map.at(node.targets[i].host->tile_pos);
             const auto num_times = tile.IsEnemy() ? 2 : tile.IsNeutral() ? 1 : 0;
@@ -157,24 +177,67 @@ void Controller::Strategize(bool first_run, bool is_resuming_async, bool bonked,
 
         }
 
-        switch(current_direction_) {
-            case COUNTERCLOCKWISE:
-                next_node_ = (next_node_ + 1) % bases_[current_base_].num_nodes;
-                if(next_node_ == 0) next_base_ = (current_base_ + 1) % kNumBases;
-                break;
-            case CLOCKWISE:
-                next_node_ -= 1;
-                if(next_node_ < 0) {
-                    next_base_ = DoMod(next_base_ - 1, kNumBases);
-                    next_node_ = bases_[next_base_].num_nodes - 1;
+        if(attacking_base_) {
+            //Go to the next node
+            next_node_ = DoMod(-2 * current_direction_ + current_node_ + 1, bases_[current_base_].num_nodes);
+            attacking_base_ &= bases_[current_base_].nodes[next_node_].entrance_status == NONE;
+        } else {
+
+            //We just finished attacking a base, now we are on an entrance node.
+            attacking_base_ = true;
+
+            //Check if there are hosts that we missed. Probably means that
+            //opponent is in this base. Scan extra.
+            if(ScoreForBase(current_base_, false) > 0) {
+                current_direction_ = 1 - current_direction_;
+                return;
+            }
+
+            //Decide which base to go to next
+            auto cc_score = ScoreForBase(DoMod(current_base_ + 1, kNumBases), true); //counterclockwise
+            auto across_score = ScoreForBase(DoMod(current_base_ + 2, kNumBases), true); //across
+            auto c_score = ScoreForBase(DoMod(current_base_ - 1, kNumBases), true); //clockwise
+
+            const int adj_entrance_idx = current_direction_ == COUNTERCLOCKWISE ? 0 : bases_[current_base_].num_nodes - 1;
+
+            //Only if there is no benefit to us for going left or right
+            //will we cut across the middle.
+            if(c_score == 0 && cc_score == 0) {
+                if(across_score > 0) {
+                    next_base_ = DoMod(current_base_ + 2, kNumBases);
+                    next_node_ = current_direction_ == COUNTERCLOCKWISE ? bases_[next_base_].num_nodes - 1 : 0;
+                    current_direction_ = 1 - current_direction_;
+
+                    for(unsigned i = 0; i < node.path_len; i++)
+                        intents_.push_back(new LineMoveIntent(this, node.opposite_path[i], kMaxVel));
+                } else {
+                    //What to do when all other bases are captured, and the player must
+                    //be in our base. Re enter the base and attack.
+                    current_direction_ = 1 - current_direction_;
                 }
-                break;
-            case NONE:
-                //Go to the opposite node.
-                break;
+
+                return;
+
+            } else {
+                auto old_direction = current_direction_;
+
+                //Break ties by staying the same direction
+                if(cc_score != c_score)
+                    current_direction_ = cc_score > c_score ? COUNTERCLOCKWISE : CLOCKWISE;
+
+                if(old_direction != current_direction_) {
+                    //Cut across entrance nodes
+                    intents_.push_back(new LineMoveIntent(this, bases_[current_base_].nodes[adj_entrance_idx].pos, kMaxVel));
+                }
+
+                next_base_ = DoMod(-2 * current_direction_ + current_base_ + 1, kNumBases);
+                next_node_ = current_direction_ == COUNTERCLOCKWISE ? 0 : bases_[next_base_].num_nodes - 1;
+            }
+
+
         }
 
-        //TODO: Break up and add scanning
+        //TODO: breakup and add scanning
         intents_.push_back(new LineMoveIntent(this, bases_[next_base_].nodes[next_node_].pos, kMaxVel));
     }
 }
@@ -186,18 +249,19 @@ and then when we return, the puzzle continues to solve_given
 void Controller::Schedule(bool first_run) {
     has_timer_interrupt = false;
 
-    //Check for expired async events, but leave it up to
-    //Strategize() to remove them in case they were interrupted
-    if(!intents_.empty()) {
-        auto front = intents_.front();
-
-        if(front->IsExpired()) {
-            front->Stop();
-        }
-    }
-
     bool first_loop = true;
     while(true) {
+
+        //Check for expired async events, but leave it up to
+        //Strategize() to remove them in case they were interrupted
+        if(!intents_.empty()) {
+            auto front = intents_.front();
+
+            if(front->IsExpired()) {
+                front->Stop();
+            }
+        }
+
         //Populate the intent list
         Strategize(first_run && first_loop, first_loop && !first_run, has_bonk_interrupt, has_respawn_interrupt);
 

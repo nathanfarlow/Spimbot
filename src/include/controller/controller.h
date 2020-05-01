@@ -64,18 +64,17 @@ private:
 
     List<Intent*> intents_;
 
-    void HandleRespawn();
+    int ScoreForBase(int base, bool include_player);
 
+    void HandleRespawn();
     void Strategize(bool first_run, bool is_resuming_async, bool bonked, bool respawned);
     void Schedule(bool first_run);
-
-    Node *GetNearestNode(const Point &pos, int base);
 
     int current_base_, current_node_;
     int next_base_, next_node_;
     int current_direction_;
 
-    unsigned char entropy_ = 0x70;
+    bool attacking_base_;
 
     Base bases_[kNumBases] = {
             //Northwest

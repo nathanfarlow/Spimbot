@@ -74,10 +74,6 @@ private:
     const Point to_;
 
     const int speed_;
-
-    int ComputeAngle();
-    unsigned ComputeCycles();
-
 public:
     LineMoveIntent(AbstractController *controller, Point to, int speed)
         : Intent(IntentType::LINE_MOVE, controller, true),
