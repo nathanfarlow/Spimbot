@@ -47,13 +47,78 @@ Node *Controller::GetNearestNode(const Point &pos, int base) {
     return nearest;
 }
 
+void Controller::HandleRespawn() {
+    //Reset our current status to the respawned base.
+    //Start moving towards the nearest node in the base
+
+    const Point pos = bot_.get_pos();
+    const Point tile_pos = PixelsToTile(pos);
+
+    unsigned min_node_index = 0;
+    float angle = 0;
+    float min_distance = INFINITY;
+
+    bool found = false;
+
+    //haha nested for loop go brrrr
+
+    for(unsigned i = 0; i < kNumBases && !found; i++) {
+        for(unsigned j = 0; j < kHostsPerBase; j++) {
+            if(bases_[i].hosts[j].tile_pos == tile_pos) {
+
+
+                for(unsigned node_index = 0; node_index < bases_[i].num_nodes; node_index++) {
+                    const auto &node = bases_[i].nodes[node_index];
+
+                    unsigned target_index;
+                    bool has_target = false;
+                    for(target_index = 0; target_index < node.num_targets; target_index++) {
+                        if(node.targets[target_index].host == &bases_[i].hosts[j]) {
+                            has_target = true;
+                            break;
+                        }
+                    }
+
+                    if(!has_target) continue;
+
+                    const float dist = pos.DistanceTo(node.pos);
+
+                    if(dist < min_distance) {
+                        angle = node.targets[target_index].angle;
+                        min_node_index = node_index;
+                        min_distance = dist;
+                    }
+                }
+
+                next_base_ = (int)i;
+                next_node_ = (int)min_node_index;
+
+                found = true;
+                break;
+            }
+        }
+    }
+
+    while(!intents_.empty())
+        delete intents_.pop_front();
+
+    const auto &min_node = bases_[next_base_].nodes[next_node_];
+
+    //Interpolate movement according to angle the node shoots the host
+    const int x = min_node.pos.x + roundf(min_distance * cosf(angle * M_PI / 180));
+    const int y = min_node.pos.y + roundf(min_distance * sinf(angle * M_PI / 180));
+
+    intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
+    intents_.push_back(new LineMoveIntent(this, min_node.pos, kMaxVel));
+}
+
 //Populate the intent list
-void Controller::Strategize(bool first_run, bool is_resuming_async) {
+void Controller::Strategize(bool first_run, bool is_resuming_async, bool bonked, bool respawned) {
 
     const auto map = bot_.get_map();
 
     if(first_run) {
-        current_direction_ = entropy_ % 2;
+        current_direction_ = COUNTERCLOCKWISE;//entropy_ % 2;
 
         current_base_ = next_base_ = bot_.get_pos().x > 100 ? SOUTHEAST : NORTHWEST;
         current_node_ = next_node_ = 1;
@@ -61,74 +126,15 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         intents_.push_back(new LineMoveIntent(this, bases_[next_base_].nodes[next_node_].pos, kMaxVel));
     }
 
-    if(is_resuming_async) {
-        auto finished = intents_.pop_front();
-
-        if(finished->WasInterrupted()) {
-
-            if(bot_.IsBonked()) {
-                //This may happen if our timer is off by a pixel.
-                //Just try again.
-                bot_.ClearBonked();
-                intents_.push_front(finished);
-            } else if(bot_.IsRespawn()) {
-                //Clear everything from the previous strategy.
-                //Reset our current status to the respawned base.
-                //Start moving towards the nearest node in the base
-
-                bot_.ClearRespawn();
-
-                const Point pos = bot_.get_pos();
-                const Point tile_pos = PixelsToTile(pos);
-
-                //haha nested for loop go brrrr
-                bool found = false;
-                for(unsigned i = 0; i < kNumBases && !found; i++) {
-                    for(unsigned j = 0; j < kHostsPerBase; j++) {
-                        if(bases_[i].hosts[j].tile_pos == tile_pos) {
-
-                            unsigned min_node_index = 0;
-                            float min_distance = INFINITY;
-
-                            for(unsigned node_index = 0; node_index < bases_[i].num_nodes; node_index++) {
-                                const auto &node = bases_[i].nodes[node_index];
-
-                                bool has_target = false;
-                                for(unsigned target_index = 0; target_index < node.num_targets; target_index++) {
-                                    if(node.targets[target_index].host == &bases_[i].hosts[j]) {
-                                        has_target = true;
-                                        break;
-                                    }
-                                }
-
-                                if(!has_target) continue;
-
-                                const float dist = pos.DistanceTo(node.pos);
-
-                                if(dist < min_distance) {
-                                    min_node_index = node_index;
-                                    min_distance = dist;
-                                }
-                            }
-
-                            next_base_ = (int)i;
-                            next_node_ = (int)min_node_index;
-
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-
-                intents_.clear();
-                intents_.push_back(new LineMoveIntent(this, bases_[next_base_].nodes[next_node_].pos, kMaxVel));
-
-                delete finished;
-
-                return;
-            }
-        }
-
+    if(respawned) {
+        HandleRespawn();
+        return;
+    } else if(bonked) {
+#ifdef DEBUG
+        printf("bonk\n");
+#endif
+    } else if(is_resuming_async) {
+        delete intents_.pop_front();
     }
 
     if(intents_.empty()) {
@@ -178,6 +184,7 @@ This is where the strategizing happens. We update our bot
 and then when we return, the puzzle continues to solve_given
 */
 void Controller::Schedule(bool first_run) {
+    has_timer_interrupt = false;
 
     //Check for expired async events, but leave it up to
     //Strategize() to remove them in case they were interrupted
@@ -192,7 +199,11 @@ void Controller::Schedule(bool first_run) {
     bool first_loop = true;
     while(true) {
         //Populate the intent list
-        Strategize(first_run && first_loop, first_loop && !first_run);
+        Strategize(first_run && first_loop, first_loop && !first_run, has_bonk_interrupt, has_respawn_interrupt);
+
+        has_bonk_interrupt = false;
+        has_respawn_interrupt = false;
+
         first_loop = false;
 
         //Consume the intent list

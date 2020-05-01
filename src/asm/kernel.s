@@ -19,6 +19,8 @@ has_request_puzzle_interrupt:   .byte 0
 has_respawn_interrupt:          .byte 0
 has_timer_interrupt:            .byte 0
 
+handler_available:              .byte 1
+
 .kdata
 
 .ktext 0x80000180
@@ -48,13 +50,14 @@ kernel_interrupt_handler:
 
 interrupt_dispatch:                 #Interrupt:
     mfc0    $k0, $13                #Get Cause register, again
-    beq     $k0, 0, done            #handled all outstanding interrupts
+    beq     $k0, 0, ret_to_c
 
     and     $k1, $k0, REQUEST_PUZZLE_INT_MASK
     bne     $k1, 0, request_puzzle_interrupt
 
     #The following interrupts trigger the invocation of our interrupt
     #handler in C land
+
     and     $k1, $k0, BONK_INT_MASK
     bne     $k1, 0, bonk_interrupt
 
@@ -64,9 +67,7 @@ interrupt_dispatch:                 #Interrupt:
     and     $k1, $k0, TIMER_INT_MASK
     bne     $k1, 0, timer_interrupt
 
-    j       done
-
-
+    j       interrupt_dispatch
 
 request_puzzle_interrupt:
     sw      $0, REQUEST_PUZZLE_ACK
@@ -78,20 +79,38 @@ bonk_interrupt:
     sw      $0, BONK_ACK
     li      $k0, 1
     sb      $k0, has_bonk_interrupt
-    j       ret_to_c
+    j       interrupt_dispatch
 
 respawn_interrupt:
     sw      $0, RESPAWN_ACK
     li      $k0, 1
     sb      $k0, has_respawn_interrupt
-    j       ret_to_c
+    j       interrupt_dispatch
 
 timer_interrupt:
     sw      $0, TIMER_ACK
     li      $k0, 1
     sb      $k0, has_timer_interrupt
+    j       interrupt_dispatch
 
 ret_to_c:
+
+    #Don't invoke external handler if no interrupts occurred
+    lb      $k1, has_bonk_interrupt
+    lb      $k0, has_respawn_interrupt
+    or      $k1, $k0, $k1
+    lb      $k0, has_timer_interrupt
+    or      $k1, $k0, $k1
+
+    #Even though we could, don't interrupt our external interrupt handler.
+    lb      $k0, handler_available
+    and     $k1, $k0, $k1
+
+    beq     $k1, 0, done
+
+    li      $k0, 0
+    sb      $k0, handler_available
+
     sub     $sp, $sp, 124
 
     #sw      $1 0($sp) #Already saved at
@@ -128,15 +147,24 @@ ret_to_c:
 
     #Our solver doesn't use floats, so we won't
     #need to save the float registers. Only the puzzle
-    #solver should be interrupted by the timer.
+    #solver should be interrupted, because we will never
+    #interrupt the interrupt handler.
 
     #Jump to handler in external C land
+handle_loop:
     la      $ra, c_ret
     la      $k0, interrupt_handler
     mtc0    $k0, $14    #Write EPC
     eret
     
 c_ret:
+    #Call the handler until it acknowledges all the flags
+    lb      $k1, has_bonk_interrupt
+    lb      $k0, has_respawn_interrupt
+    or      $k1, $k0, $k1
+    lb      $k0, has_timer_interrupt
+    or      $k1, $k0, $k1
+    bne     $k1, 0, handle_loop
 
     #lw      $1 0($sp)
     lw      $2 4($sp)
@@ -172,7 +200,8 @@ c_ret:
 
     add     $sp, $sp, 124
 
-    j       interrupt_dispatch
+    li      $k0, 1
+    sb      $k0, handler_available
 
 done:
 

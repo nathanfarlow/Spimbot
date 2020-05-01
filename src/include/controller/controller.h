@@ -64,7 +64,9 @@ private:
 
     List<Intent*> intents_;
 
-    void Strategize(bool first_run, bool is_resuming_async);
+    void HandleRespawn();
+
+    void Strategize(bool first_run, bool is_resuming_async, bool bonked, bool respawned);
     void Schedule(bool first_run);
 
     Node *GetNearestNode(const Point &pos, int base);

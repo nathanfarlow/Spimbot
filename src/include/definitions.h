@@ -95,6 +95,9 @@ constexpr unsigned kNumGameCycles = 1e7;
 
 //The kernel sets these to 1 when an interrupt is called and acknowledged.
 //It is the userland code's responsibility to set it back to 0.
+extern "C" {
 extern volatile uint8_t has_bonk_interrupt;
 extern volatile uint8_t has_request_puzzle_interrupt;
 extern volatile uint8_t has_respawn_interrupt;
+extern volatile uint8_t has_timer_interrupt;
+}
