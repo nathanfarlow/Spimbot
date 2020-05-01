@@ -118,7 +118,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async, bool bonked,
     const auto map = bot_.get_map();
 
     if(first_run) {
-        current_direction_ = COUNTERCLOCKWISE;//entropy_ % 2;
+        current_direction_ = entropy_ % 2;
 
         current_base_ = next_base_ = bot_.get_pos().x > 100 ? SOUTHEAST : NORTHWEST;
         current_node_ = next_node_ = 1;
@@ -233,7 +233,7 @@ void Controller::Schedule(bool first_run) {
                 } else {
                     //The approximate number of instructions it takes to handle the timer interrupt
                     //So we can call Stop() on the async intent as accurately as possible
-                    constexpr unsigned kNumHandlerInst = 110;
+                    constexpr unsigned kNumHandlerInst = 140;
                     *TIMER = current->get_start() + duration - kNumHandlerInst;
                     
                     return;
