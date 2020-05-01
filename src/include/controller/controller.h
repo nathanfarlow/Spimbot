@@ -126,7 +126,7 @@ private:
                 {{26, 2}, COUNTERCLOCKWISE, NORTHEAST}},
 
                 5,
-                {{{200, 132}, COUNTERCLOCKWISE, 3, {{&bases_[NORTHEAST].hosts[2], 307}, {&bases_[SOUTHEAST].hosts[2], 87}, {&bases_[NORTHWEST].hosts[2], 191}}, 2, {{176, 172}, {136, 202}}},
+                {{{200, 132}, COUNTERCLOCKWISE, 3, {{&bases_[NORTHEAST].hosts[2], 307}, {&bases_[SOUTHEAST].hosts[2], 87}, {&bases_[NORTHWEST].hosts[2], 193}}, 2, {{176, 172}, {136, 202}}},
                 {{248, 88}, NONE, 3, {{&bases_[NORTHEAST].hosts[2], 157}, {&bases_[NORTHEAST].hosts[0], 21}, {&bases_[NORTHEAST].hosts[3], 242}}},
                 {{264, 88}, NONE, 3, {{&bases_[NORTHEAST].hosts[1], 276}, {&bases_[NORTHEAST].hosts[0], 29}, {&bases_[NORTHEAST].hosts[2], 165}}},
                 {{248, 88}, NONE, 3, {{&bases_[NORTHEAST].hosts[2], 157}, {&bases_[NORTHEAST].hosts[0], 21}, {&bases_[NORTHEAST].hosts[3], 242}}},
