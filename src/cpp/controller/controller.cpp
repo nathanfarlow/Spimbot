@@ -33,37 +33,6 @@ void Controller::Start() {
     
 }
 
-void Controller::Spin(int divisions) {
-    int curr_angle = bot_.get_angle();
-    int turn_angle = 360 / divisions;
-    Tile scan_result; 
-
-    for (int i = 0; i < divisions; i++) {
-        bot_.set_angle(turn_angle, Orientation::RELATIVE);
-        scan_result = bot_.Scan().tile;
-        if (scan_result.IsEnemy()) {
-            ShootEnemy();
-            break;
-        }
-    }
-
-    bot_.set_angle(curr_angle, Orientation::ABSOLUTE);
-}
-
-void Controller::ShootEnemy() {
-    // Shoot five beams at the enemy
-    bot_.set_angle(-6, Orientation::RELATIVE);
-    bot_.Shoot();
-    bot_.set_angle(3, Orientation::RELATIVE);
-    bot_.Shoot();
-    bot_.set_angle(3, Orientation::RELATIVE);
-    bot_.Shoot();
-    bot_.set_angle(3, Orientation::RELATIVE);
-    bot_.Shoot();
-    bot_.set_angle(3, Orientation::RELATIVE);
-    bot_.Shoot();
-}
-
 //Populate the intent list
 void Controller::Strategize(bool first_run, bool is_resuming_async) {
 
@@ -97,13 +66,32 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         int diff_y = node.pos.y - current_pos.y;
         int divisions = roundf(sqrtf((diff_x * diff_x + diff_y * diff_y)) / kSubdivisionLength);
 
+        //printf("Start: (%d, %d)\n", current_pos.x, current_pos.y);
+       
         int y = current_pos.y + (diff_y / divisions);
-        for (int x = current_pos.x + (diff_x / divisions); x < node.pos.x; x += diff_x / divisions) {
-            intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
-            y += diff_y / divisions;
+        if (current_pos.x < node.pos.x) {
+            for (int x = current_pos.x + (diff_x / divisions); x < node.pos.x; x += diff_x / divisions) {
+                intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
+                intents_.push_back(new SpinShootIntent(this, 50));
+                y += diff_y / divisions;
+
+            //printf("Move (%d, %d,)\n", x, y);
+            }
+
+        } else {
+            for (int x = current_pos.x + (diff_x / divisions); x > node.pos.x; x += diff_x / divisions) {
+                intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
+                intents_.push_back(new SpinShootIntent(this, 50));
+                y += diff_y / divisions;
+
+            //printf("Move (%d, %d,)\n", x, y);
+            }
         }
 
         intents_.push_back(new LineMoveIntent(this, node.pos, kMaxVel));
+
+        //printf("End: (%d, %d)\n", node.pos.x, node.pos.y);
+        //printf("Finish subdivide\n");
 
         if(++current_node_ == bases_[current_base_].num_nodes) {
             current_node_ = 0;
@@ -180,14 +168,6 @@ void Controller::OnTimer(bool first_run) {
 }
 
 void Controller::OnSolve() {
-    /*if (bot_.get_bytecoins() > 400) {
-        spin_timer_--;
-        if (spin_timer_ == 0) {
-            Spin(50);
-            spin_timer_ = kSpinTimerMax;
-        }
-    }*/
-
     if(!intents_.empty()) {
         auto front = intents_.front();
 

@@ -7,7 +7,7 @@
 class AbstractController;
 
 enum class IntentType {
-    WAIT_BYTECOINS, LINE_MOVE
+    WAIT_BYTECOINS, LINE_MOVE, SPIN_SHOOT
 };
 
 class Intent {
@@ -87,4 +87,15 @@ public:
     void Stop()  override;
 
     bool WasInterrupted() const override;
+};
+
+class SpinShootIntent : public Intent {
+    private:
+        int divisions_;
+
+    public:
+        SpinShootIntent(AbstractController *controller, int divisions)
+            : Intent(IntentType::SPIN_SHOOT, controller, false), divisions_(divisions) {}
+        void Start() override;
+        void Stop() override;
 };

@@ -31,3 +31,39 @@ bool LineMoveIntent::WasInterrupted() const {
         || controller_->get_bot().IsRespawn()
         || Intent::WasInterrupted();
 }
+
+void SpinShootIntent::Start() {
+    running_ = true;
+
+    int curr_angle = controller_->get_bot().get_angle();
+    int turn_angle = 360 / divisions_;
+    Tile scan_result; 
+
+    for (int i = 0; i < divisions_; i++) {
+        controller_->get_bot().set_angle(turn_angle, Orientation::RELATIVE);
+        scan_result = controller_->get_bot().Scan().tile;
+        if (scan_result.IsEnemy()) {
+            controller_->get_bot().set_angle(-9, Orientation::RELATIVE);
+            controller_->get_bot().Shoot();
+            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
+            controller_->get_bot().Shoot();
+            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
+            controller_->get_bot().Shoot();
+            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
+            controller_->get_bot().Shoot();
+            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
+            controller_->get_bot().Shoot();
+            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
+            controller_->get_bot().Shoot();
+            controller_->get_bot().set_angle(3, Orientation::RELATIVE);
+            controller_->get_bot().Shoot();
+            break;
+        }
+    }
+
+    controller_->get_bot().set_angle(curr_angle, Orientation::ABSOLUTE);
+}
+
+void SpinShootIntent::Stop() {
+    running_ = false;
+}
