@@ -11,6 +11,8 @@
 
 AbstractController *AbstractController::global;
 
+constexpr int kSubdivisionLength = 8; // Subdivide by tile length
+
 void Controller::Start() {
     spin_timer_ = kSpinTimerMax;
 
@@ -87,6 +89,18 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
                 bot_.set_angle(prev_node_->targets[i].angle, Orientation::ABSOLUTE);
                 bot_.Shoot();
             }
+        }
+
+        // Subdivide line move
+        Point current_pos = bot_.get_pos();
+        int diff_x = node.pos.x - current_pos.x;
+        int diff_y = node.pos.y - current_pos.y;
+        int divisions = roundf(sqrtf((diff_x * diff_x + diff_y * diff_y)) / kSubdivisionLength);
+
+        int y = current_pos.y + (diff_y / divisions);
+        for (int x = current_pos.x + (diff_x / divisions); x < node.pos.x; x += diff_x / divisions) {
+            intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
+            y += diff_y / divisions;
         }
 
         intents_.push_back(new LineMoveIntent(this, node.pos, kMaxVel));
@@ -166,13 +180,13 @@ void Controller::OnTimer(bool first_run) {
 }
 
 void Controller::OnSolve() {
-    if (bot_.get_bytecoins() > 400) {
+    /*if (bot_.get_bytecoins() > 400) {
         spin_timer_--;
         if (spin_timer_ == 0) {
             Spin(50);
             spin_timer_ = kSpinTimerMax;
         }
-    }
+    }*/
 
     if(!intents_.empty()) {
         auto front = intents_.front();
