@@ -30,6 +30,32 @@ void Controller::Start() {
     
 }
 
+#define max(a, b) ((a) >= (b) ? (a) : (b))
+
+void Controller::LineMove(const Point &from, const Point &to, int velocity, int scan_len) {
+
+    const int divisions = from.DistanceTo(to) / scan_len;
+
+    if(divisions > 1) {
+
+        int x = from.x, y = from.y;
+
+        const int multiplier = x > to.x ? -1 : 1;
+
+        for(int i = 0; i < divisions; i++) {
+            const float angle = atanf((float)(to.y - y) / (to.x - x));
+            int dx = roundf(scan_len * cosf(angle) * multiplier);
+            int dy = roundf(scan_len * sinf(angle) * multiplier);
+
+            x += dx; y += dy;
+            intents_.push_back(new LineMoveIntent(this, {x, y}, velocity));
+        }
+
+    }
+
+    intents_.push_back(new LineMoveIntent(this, to, velocity));
+}
+
 void Controller::HandleRespawn() {
     //Reset our current status to the respawned base.
     //Start moving towards the nearest node in the base
@@ -114,8 +140,8 @@ void Controller::HandleRespawn() {
     const int x = min_node.pos.x + roundf(min_distance * cosf((angle + angle_off) * M_PI / 180));
     const int y = min_node.pos.y + roundf(min_distance * sinf((angle + angle_off) * M_PI / 180));
 
-    intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
-    intents_.push_back(new LineMoveIntent(this, min_node.pos, kMaxVel));
+    LineMove(pos, {x, y}, kMaxVel);
+    LineMove({x, y}, min_node.pos, kMaxVel);
 }
 
 int Controller::ScoreForBase(int base, bool include_player) {
@@ -152,6 +178,8 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
         attacking_base_ = true;
 
         intents_.push_back(new LineMoveIntent(this, bases_[next_base_].nodes[next_node_].pos, kMaxVel));
+
+        return;
     }
 
     if(respawned) {
@@ -169,10 +197,14 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
 
         AStar pathfinder(map);
         auto result = pathfinder.FindPath(bot_.get_pos(), bases_[next_base_].nodes[next_node_].pos);
+        Point prev = bot_.get_pos();
         while(!result.empty()) {
             auto pos = result.pop_front();
-            intents_.push_back(new LineMoveIntent(this, pos, kMaxVel));
+            LineMove(prev, pos, kMaxVel);
+            prev = pos;
         }
+        
+        return;
 
     } else if(timer) {
         delete intents_.pop_front();
@@ -207,6 +239,8 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
         }
 
         //bot_.set_velocity(kMaxVel);
+
+        Point from = bot_.get_pos();
 
         if(attacking_base_) {
             //Go to the next node
@@ -243,8 +277,11 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
                     next_node_ = current_direction_ == COUNTERCLOCKWISE ? bases_[next_base_].num_nodes - 1 : 0;
                     current_direction_ = 1 - current_direction_;
 
-                    for(unsigned i = 0; i < node.path_len; i++)
-                        intents_.push_back(new LineMoveIntent(this, node.opposite_path[i], kMaxVel));
+                    for(unsigned i = 0; i < node.path_len; i++) {
+                        auto pos = node.opposite_path[i];
+                        LineMove(from, pos, kMaxVel);
+                        from = pos;
+                    }
                 } else {
                     //What to do when all other bases are captured, and the player must
                     //be in our base. Re enter the base and attack.
@@ -262,7 +299,8 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
 
                 if(old_direction != current_direction_) {
                     //Cut across entrance nodes
-                    intents_.push_back(new LineMoveIntent(this, bases_[current_base_].nodes[adj_entrance_idx].pos, kMaxVel));
+                    LineMove(from, bases_[current_base_].nodes[adj_entrance_idx].pos, kMaxVel);
+                    from = bases_[current_base_].nodes[adj_entrance_idx].pos;
                 }
 
                 next_base_ = DoMod(-2 * current_direction_ + current_base_ + 1, kNumBases);
@@ -272,8 +310,7 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
 
         }
 
-        //TODO: breakup and add scanning
-        intents_.push_back(new LineMoveIntent(this, bases_[next_base_].nodes[next_node_].pos, kMaxVel));
+        LineMove(from, bases_[next_base_].nodes[next_node_].pos, kMaxVel);
     }
 }
 
