@@ -66,16 +66,12 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         int diff_y = node.pos.y - current_pos.y;
         int divisions = roundf(sqrtf((diff_x * diff_x + diff_y * diff_y)) / kSubdivisionLength);
 
-        //printf("Start: (%d, %d)\n", current_pos.x, current_pos.y);
-       
         int y = current_pos.y + (diff_y / divisions);
         if (current_pos.x < node.pos.x) {
             for (int x = current_pos.x + (diff_x / divisions); x < node.pos.x; x += diff_x / divisions) {
                 intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
                 intents_.push_back(new SpinShootIntent(this, 8));
                 y += diff_y / divisions;
-
-            //printf("Move (%d, %d,)\n", x, y);
             }
 
         } else {
@@ -83,15 +79,10 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
                 intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
                 intents_.push_back(new SpinShootIntent(this, 8));
                 y += diff_y / divisions;
-
-            //printf("Move (%d, %d,)\n", x, y);
             }
         }
 
         intents_.push_back(new LineMoveIntent(this, node.pos, kMaxVel));
-
-        //printf("End: (%d, %d)\n", node.pos.x, node.pos.y);
-        //printf("Finish subdivide\n");
 
         if(++current_node_ == bases_[current_base_].num_nodes) {
             current_node_ = 0;
