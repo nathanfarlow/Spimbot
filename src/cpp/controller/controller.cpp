@@ -46,7 +46,7 @@ void Controller::LineMove(const Point &from, const Point &to, int velocity, int 
 
         const int multiplier = x > to.x ? -1 : 1;
 
-        for(int i = 0; i < divisions; i++) {
+        for(int i = 0; i < divisions - 1; i++) {
             const float angle = atanf((float)(to.y - y) / (to.x - x));
             int dx = roundf(scan_len * cosf(angle) * multiplier);
             int dy = roundf(scan_len * sinf(angle) * multiplier);
@@ -180,6 +180,7 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
         current_node_ = next_node_ = 1;
 
         attacking_base_ = true;
+        first_base_ = true;
 
         intents_.push_back(new LineMoveIntent(this, bases_[next_base_].nodes[next_node_].pos, kMaxVel));
 
@@ -264,6 +265,7 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
                     //Proceed with caution: the opponent is probably here.
 
                     current_direction_ = 1 - current_direction_;
+                    first_base_ = false;
                     return;
                 }
             }
@@ -285,7 +287,7 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
 
                     for(unsigned i = 0; i < node.path_len; i++) {
                         auto pos = node.opposite_path[i];
-                        LineMove(from, pos, kMaxVel);
+                        LineMove(from, pos, kMaxVel, first_base_ ? INT_MAX : kScanLen);
                         from = pos;
                     }
                 } else {
@@ -294,6 +296,7 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
                     current_direction_ = 1 - current_direction_;
                 }
 
+                first_base_ = false;
                 return;
 
             } else {
@@ -305,7 +308,7 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
 
                 if(old_direction != current_direction_) {
                     //Cut across entrance nodes
-                    LineMove(from, bases_[current_base_].nodes[adj_entrance_idx].pos, kMaxVel);
+                    LineMove(from, bases_[current_base_].nodes[adj_entrance_idx].pos, kMaxVel, first_base_ ? INT_MAX : kScanLen);
                     from = bases_[current_base_].nodes[adj_entrance_idx].pos;
                 }
 
@@ -315,7 +318,8 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
 
         }
 
-        LineMove(from, bases_[next_base_].nodes[next_node_].pos, kMaxVel);
+        first_base_ = false;
+        LineMove(from, bases_[next_base_].nodes[next_node_].pos, kMaxVel, first_base_ ? INT_MAX : kScanLen);
     }
 }
 

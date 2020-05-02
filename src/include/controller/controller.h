@@ -88,6 +88,7 @@ private:
     int current_direction_;
 
     bool attacking_base_;
+    bool first_base_;
 
     Base bases_[kNumBases] = {
             //Northwest
