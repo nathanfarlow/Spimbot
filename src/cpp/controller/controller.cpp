@@ -89,15 +89,22 @@ void Controller::HandleRespawn() {
 
     const auto &min_node = bases_[next_base_].nodes[next_node_];
 
-    //TODO: check if need to attack base. Otherwise go directly to entrance node.
-    attacking_base_ = min_node.entrance_status == NONE;
+    if(min_node.entrance_status == NONE) {
+        attacking_base_ = true;
 
-    if(attacking_base_ && min_node.entrance_status != current_direction_)
-        current_direction_ = 1 - current_direction_;
+        if(ScoreForBase(next_base_, false) > 0) {
+            current_direction_ = next_node_ < bases_[next_base_].num_nodes / 2 ? COUNTERCLOCKWISE : CLOCKWISE;
+        } else {
+            current_direction_ = next_node_ > bases_[next_base_].num_nodes / 2 ? COUNTERCLOCKWISE : CLOCKWISE;
+        }
+    } else {
+        current_direction_ = pos.x < kNumTiles * kTileSize / 2 ? min_node.entrance_status : 1 - min_node.entrance_status;
+        attacking_base_ = false;
+    }
 
     //Interpolate movement according to angle the node shoots the host
 
-    constexpr int kMaxAngleOff = 3;
+    constexpr int kMaxAngleOff = 4;
 
     const int sw = kTileSize * kNumTiles;
 
@@ -154,12 +161,19 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
 #ifdef DEBUG
         printf("bonk\n");
 #endif
+
         if(!intents_.empty()) intents_.front()->Stop();
         while(!intents_.empty()) delete intents_.pop_front();
 
-        //put that thing back where it came from or so help me
-        intents_.push_back(new LineMoveIntent(this, bases_[current_base_].nodes[current_node_].pos, kMaxVel));
-        while(true);
+        //We are fucked without pathfinding. Unfortunately, this takes a long time and can lose us the game.
+
+        AStar pathfinder(map);
+        auto result = pathfinder.FindPath(bot_.get_pos(), bases_[next_base_].nodes[next_node_].pos);
+        while(!result.empty()) {
+            auto pos = result.pop_front();
+            intents_.push_back(new LineMoveIntent(this, pos, kMaxVel));
+        }
+
     } else if(timer) {
         delete intents_.pop_front();
     }
