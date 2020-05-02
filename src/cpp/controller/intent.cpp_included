@@ -140,9 +140,6 @@ void ScanIntent::Start() {
                 sleep(10);
                 controller_->get_bot().set_angle(shootDelta, Orientation::RELATIVE);
                 controller_->get_bot().Shoot();
-                if(controller_->get_bot().get_bytecoins() == 0) {
-                    printf("fuck\n");
-                }
             }
             break;
         }
