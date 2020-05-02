@@ -24,6 +24,8 @@ struct Tile {
     bool IsFriendly()   const {return mask & FRIENDLY_MASK;}
     bool IsEnemy()      const {return mask & ENEMY_MASK;}
 
+    bool IsPlayer()     const {return mask & PLAYER_MASK;}
+
     bool IsNeutral()    const {return !IsFriendly() && !IsEnemy();}
 };
 

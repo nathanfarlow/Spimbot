@@ -5,6 +5,7 @@
 */
 
 #include <math.h>
+#include "util/util.h"
 
 constexpr float kCycleRatio = 10000;
 
@@ -126,14 +127,35 @@ void ScanIntent::Start() {
         end_angle = larger;
     }
 
-    Tile scan_result;
+    const int coins = controller_->get_bot().get_bytecoins();
+    const int shootDelta = coins < 1000 ? 4 : coins < 1500 ? 3 : 2;
 
-    int shootDelta = controller_->get_bot().get_bytecoins() < 5000 ? 5 : 4;
+    ArrayList<Point> shot_hosts;
+    bool shot_player = false;
 
     for (int angle = start_angle; angle < end_angle; angle += delta_) {
         controller_->get_bot().set_angle(angle, Orientation::ABSOLUTE);
-        scan_result = controller_->get_bot().Scan().tile;
-        if (scan_result.IsEnemy()) {
+        auto result = controller_->get_bot().Scan();
+        Tile tile = result.tile;
+
+        if(tile.IsHost() && !shot_hosts.contains({result.hit_x, result.hit_y})) {
+            if(!tile.IsFriendly()) {
+                controller_->get_bot().Shoot();
+                sleep(10);
+            }
+
+            if(tile.IsEnemy())
+                controller_->get_bot().Shoot();
+
+            shot_hosts.push_back({result.hit_x, result.hit_y});
+
+        } else if(tile.IsPlayer() && !shot_player) {
+
+            const float dist = TileToPixels({result.hit_x, result.hit_y}).DistanceTo(controller_->get_bot().get_pos());
+
+            if(dist > 16 * kTileSize)
+                continue;
+
             controller_->get_bot().set_angle(-1 * kShootAngle, Orientation::RELATIVE);
             controller_->get_bot().Shoot();
             for (int i = 1; i < 2 * kShootAngle; i += shootDelta) {
@@ -141,8 +163,10 @@ void ScanIntent::Start() {
                 controller_->get_bot().set_angle(shootDelta, Orientation::RELATIVE);
                 controller_->get_bot().Shoot();
             }
-            break;
+
+            shot_player = true;
         }
+
     }
 
     controller_->get_bot().set_angle(curr_angle, Orientation::ABSOLUTE);

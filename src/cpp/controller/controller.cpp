@@ -35,8 +35,7 @@ void Controller::LineMove(const Point &from, const Point &to, int velocity, int 
 
     int divisions = from.DistanceTo(to) / scan_len - 1;
 
-    if(bot_.get_bytecoins() < 1000)
-        divisions /= 2;
+    if(bot_.get_bytecoins() < 500) divisions /= 2;
 
     const int delta = 3;
 
@@ -357,7 +356,13 @@ void Controller::Schedule(bool first_run) {
                 continue;
             }
 
+            if(has_bonk_interrupt || has_respawn_interrupt)
+                Schedule(false);
+
             current->Start();
+
+            if(has_bonk_interrupt || has_respawn_interrupt)
+                Schedule(false);
 
             //Schedule an interrupt and return to the puzzle solver if we can execute async
             if(current->IsAsync()) {
@@ -368,7 +373,7 @@ void Controller::Schedule(bool first_run) {
                 const unsigned duration = current->get_duration();
 
                 if(has_bonk_interrupt || has_respawn_interrupt) {
-                    break;
+                    Schedule(false);
                 }
 
                 if(duration < kMinCycles) {
@@ -379,8 +384,13 @@ void Controller::Schedule(bool first_run) {
                 } else {
                     //The approximate number of instructions it takes to handle the timer interrupt
                     //So we can call Stop() on the async intent as accurately as possible
-                    constexpr unsigned kNumHandlerInst = 130;
+                    constexpr unsigned kNumHandlerInst = 150;
                     *TIMER = current->get_start() + duration - kNumHandlerInst;
+
+                    if(has_bonk_interrupt || has_respawn_interrupt) {
+                        *TIMER = INT_MAX;
+                        Schedule(false);
+                    }
 
                     return;
                 }
