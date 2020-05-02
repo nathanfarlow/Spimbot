@@ -17,6 +17,12 @@ public:
     ArrayList() {arr_ = new T[max_size_];}
     virtual ~ArrayList();
 
+    ArrayList(const ArrayList<T> &other);
+    ArrayList(ArrayList<T> &&other) noexcept;
+
+    ArrayList &operator=(const ArrayList<T> &other);
+    ArrayList &operator=(ArrayList<T> &&other) noexcept;
+
     void push_front(const T& value) override;
     void push_back(const T& value) override;
 
@@ -26,11 +32,14 @@ public:
     T pop_front() override;
     T pop_back() override;
 
+    bool contains(const T& obj) const override;
+
     void clear() override;
 
     size_t size() const override {return size_;};
 
     virtual T& operator[](size_t i) {return arr_[i];}
+    virtual const T& operator[](size_t i) const {return arr_[i];}
 };
 
 #include "arraylist.hpp"

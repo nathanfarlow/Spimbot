@@ -18,6 +18,8 @@ public:
 
     virtual void clear() = 0;
 
+    virtual bool contains(const T& obj) const = 0;
+
     virtual size_t size() const = 0;
 
     virtual bool empty() const {return size() == 0;}
@@ -41,10 +43,10 @@ public:
     virtual ~List();
 
     List(const List<T> &other);
-    List(List<T> &&other);
+    List(List<T> &&other) noexcept;
 
     List &operator=(const List<T> &other);
-    List &operator=(List<T> &&other);
+    List &operator=(List<T> &&other) noexcept;
 
     void push_front(const T& value) override;
     void push_back(const T& value) override;
@@ -56,6 +58,8 @@ public:
     T pop_back() override;
 
     void clear() override;
+
+    virtual bool contains(const T& obj) const override;
 
     size_t size() const override {return size_;};
 };

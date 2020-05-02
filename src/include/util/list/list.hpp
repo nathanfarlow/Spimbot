@@ -2,12 +2,12 @@
 #include <stdio.h>
 template <typename T>
 List<T>::List(const List<T> &other) {
-    *this = other;printf("4\n");
+    *this = other;
 }
 
 template <typename T>
-List<T>::List(List<T> &&other) {
-    *this = other;printf("3\n");
+List<T>::List(List<T> &&other) noexcept {
+    *this = other;
 }
 
 template <typename T>
@@ -20,17 +20,16 @@ List<T> &List<T>::operator=(const List<T> &other) {
         push_back(current->data);
         current = current->next;
     }
-    printf("2\n");
+
     return *this;
 }
 
 template <typename T>
-List<T> &List<T>::operator=(List<T> &&other) {
+List<T> &List<T>::operator=(List<T> &&other) noexcept {
     auto temp = other.head_;
     other.head_ = head_;
     head_ = temp;
     size_ = other.size_;
-    printf("1\n");
 
     return *this;
 }
@@ -81,7 +80,7 @@ void List<T>::push_back(const T &value) {
         new_tail->prev = tail_;
         tail_ = new_tail;
     }
-    
+
     ++size_;
 }
 
@@ -130,4 +129,18 @@ T List<T>::pop_back() {
     --size_;
 
     return ret;
+}
+
+template <typename T>
+bool List<T>::contains(const T& obj) const {
+    auto current = head_;
+
+    while(current != nullptr) {
+        if(current->data == obj)
+            return true;
+
+        current = current->next;
+    }
+
+    return false;
 }

@@ -89,14 +89,23 @@ void Controller::HandleRespawn() {
 
     const auto &min_node = bases_[next_base_].nodes[next_node_];
 
+    //TODO: check if need to attack base. Otherwise go directly to entrance node.
     attacking_base_ = min_node.entrance_status == NONE;
 
-    if(min_node.entrance_status != current_direction_)
+    if(attacking_base_ && min_node.entrance_status != current_direction_)
         current_direction_ = 1 - current_direction_;
 
     //Interpolate movement according to angle the node shoots the host
-    const int x = min_node.pos.x + roundf(min_distance * cosf(angle * M_PI / 180));
-    const int y = min_node.pos.y + roundf(min_distance * sinf(angle * M_PI / 180));
+
+    constexpr int kMaxAngleOff = 3;
+
+    const int sw = kTileSize * kNumTiles;
+
+    bool should_offset_counterclockwise = (pos.x < sw / 2 && pos.x > min_node.pos.x) || (pos.x > sw / 2 && pos.x < min_node.pos.x);
+    const int angle_off = -2 * kMaxAngleOff * should_offset_counterclockwise + kMaxAngleOff;
+
+    const int x = min_node.pos.x + roundf(min_distance * cosf((angle + angle_off) * M_PI / 180));
+    const int y = min_node.pos.y + roundf(min_distance * sinf((angle + angle_off) * M_PI / 180));
 
     intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
     intents_.push_back(new LineMoveIntent(this, min_node.pos, kMaxVel));
@@ -162,13 +171,17 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
 
         const auto &node = bases_[current_base_].nodes[current_node_];
 
-        //TODO: Recompute timer
+        //Remember what we just shot, because the bullet takes time to travel
+        ArrayList<Host*> just_shot;
+
         bot_.set_velocity(0);
 
         //Shoot the nodes we can from here
         for(unsigned i = 0; i < node.num_targets; i++) {
             const auto tile = map.at(node.targets[i].host->tile_pos);
             const auto num_times = tile.IsEnemy() ? 2 : tile.IsNeutral() ? 1 : 0;
+
+            just_shot.push_back(node.targets[i].host);
 
             bot_.set_angle(node.targets[i].angle, Orientation::ABSOLUTE);
             for(auto j = 0; j < num_times; j++) {
@@ -179,7 +192,7 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
 
         }
 
-        bot_.set_velocity(kMaxVel);
+        //bot_.set_velocity(kMaxVel);
 
         if(attacking_base_) {
             //Go to the next node
@@ -190,11 +203,15 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
             //We just finished attacking a base, now we are on an entrance node.
             attacking_base_ = true;
 
-            //Check if there are hosts that we missed. Probably means that
-            //opponent is in this base. Scan extra.
-            if(ScoreForBase(current_base_, false) > 0) {
-                current_direction_ = 1 - current_direction_;
-                return;
+            //Check if there are hosts that we missed.
+            for(auto &host : bases_[current_base_].hosts) {
+                if(!map.at(host.tile_pos).IsFriendly() && !just_shot.contains(&host)) {
+                    //This host is probably within the base, or literally shot in the last 100 cycles.
+                    //Proceed with caution: the opponent is probably here.
+
+                    current_direction_ = 1 - current_direction_;
+                    return;
+                }
             }
 
             //Decide which base to go to next
@@ -278,10 +295,6 @@ void Controller::Schedule(bool first_run) {
 
         first_loop = false;
 
-        if(has_respawn_interrupt || has_bonk_interrupt || has_timer_interrupt) {
-            continue;
-        }
-
         //Consume the intent list
         while(!intents_.empty()) {
             auto current = intents_.front();
@@ -290,6 +303,10 @@ void Controller::Schedule(bool first_run) {
                && bot_.get_bytecoins() >= ((WaitForBytecoinsIntent*)current)->get_min_bytecoins()) {
                 delete intents_.pop_front();
                 continue;
+            }
+
+            if(has_respawn_interrupt || has_bonk_interrupt || has_timer_interrupt) {
+                break;
             }
 
             current->Start();
