@@ -57,16 +57,26 @@ struct Base {
     Node nodes[kMaxNodesPerBase];
 };
 
+struct TimedAngle {
+    int time;
+    float angle;
+
+    bool operator==(const TimedAngle &other) {
+        return time == other.time && angle == other.angle;
+    }
+};
+
 class Controller : public AbstractController {
 private:
 
     PuzzleManager puzzle_manager_;
 
     List<Intent*> intents_;
+    List<TimedAngle> angles_;
 
     int ScoreForBase(int base, bool include_player);
 
-    constexpr static int kScanLen = 8;
+    constexpr static int kScanLen = 12;
     void LineMove(const Point &from, const Point &to, int velocity, int scan_len = kScanLen);
 
     void HandleRespawn();

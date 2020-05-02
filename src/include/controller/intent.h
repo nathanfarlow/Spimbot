@@ -7,7 +7,7 @@
 class AbstractController;
 
 enum class IntentType {
-    WAIT_BYTECOINS, LINE_MOVE
+    WAIT_BYTECOINS, LINE_MOVE, SCAN
 };
 
 class Intent {
@@ -81,4 +81,16 @@ public:
 
     void Start() override;
     void Stop()  override;
+};
+
+class ScanIntent : public Intent {
+private:
+    int delta_;
+public:
+    ScanIntent(AbstractController *controller, int delta)
+        : Intent(IntentType::SCAN, controller, false),
+        delta_(delta) {}
+
+    void Start() override;
+    void Stop()  override {}
 };

@@ -33,7 +33,12 @@ void Controller::Start() {
 
 void Controller::LineMove(const Point &from, const Point &to, int velocity, int scan_len) {
 
-    const int divisions = from.DistanceTo(to) / scan_len - 1;
+    int divisions = from.DistanceTo(to) / scan_len - 1;
+
+    if(bot_.get_bytecoins() < 1000)
+        divisions /= 2;
+
+    const int delta = 3;
 
     if(divisions > 1) {
 
@@ -48,11 +53,13 @@ void Controller::LineMove(const Point &from, const Point &to, int velocity, int 
 
             x += dx; y += dy;
             intents_.push_back(new LineMoveIntent(this, {x, y}, velocity));
+            intents_.push_back(new ScanIntent(this, delta));
         }
 
     }
 
     intents_.push_back(new LineMoveIntent(this, to, velocity));
+    intents_.push_back(new ScanIntent(this, delta));
 }
 
 void Controller::HandleRespawn() {
