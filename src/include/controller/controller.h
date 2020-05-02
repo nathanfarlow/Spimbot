@@ -115,7 +115,7 @@ private:
                  {{72, 232}, NONE, 3, {{&bases_[SOUTHWEST].hosts[2], 337}, {&bases_[SOUTHWEST].hosts[0], 201}, {&bases_[SOUTHWEST].hosts[3], 62}}},
                  {{56, 232}, NONE, 3, {{&bases_[SOUTHWEST].hosts[1], 96}, {&bases_[SOUTHWEST].hosts[0], 209}, {&bases_[SOUTHWEST].hosts[2], 345}}},
                  {{72, 232}, NONE, 3, {{&bases_[SOUTHWEST].hosts[2], 337}, {&bases_[SOUTHWEST].hosts[0], 201}, {&bases_[SOUTHWEST].hosts[3], 62}}},
-                 {{138, 202}, COUNTERCLOCKWISE, 3, {{&bases_[SOUTHWEST].hosts[2], 155}, {&bases_[NORTHWEST].hosts[2], 254}, {&bases_[SOUTHEAST].hosts[2], 2}}, 2, {{176, 172}, {200, 130}}}}
+                 {{138, 202 - 2}, COUNTERCLOCKWISE, 3, {{&bases_[SOUTHWEST].hosts[2], 155}, {&bases_[NORTHWEST].hosts[2], 254}, {&bases_[SOUTHEAST].hosts[2], 2}}, 2, {{176, 172}, {200, 130}}}}
             },
 
             //Southeast

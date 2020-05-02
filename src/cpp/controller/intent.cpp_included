@@ -31,8 +31,7 @@ static int GetAngle(int from_x, int from_y, int to_x, int to_y) {
     return roundf(angle * 180 / M_PI);
 }
 
-constexpr int kShootAngle = 30;
-constexpr int kShootAngleDelta = 4;
+constexpr int kShootAngle = 20;
 
 void ScanIntent::Start() {
     const int curr_angle = controller_->get_bot().get_angle();
@@ -129,7 +128,7 @@ void ScanIntent::Start() {
 
     Tile scan_result;
 
-    int shootDelta = controller_->get_bot().get_bytecoins() < 5000 ? 6 : 5;
+    int shootDelta = controller_->get_bot().get_bytecoins() < 5000 ? 5 : 4;
 
     for (int angle = start_angle; angle < end_angle; angle += delta_) {
         controller_->get_bot().set_angle(angle, Orientation::ABSOLUTE);
@@ -138,12 +137,13 @@ void ScanIntent::Start() {
             controller_->get_bot().set_angle(-1 * kShootAngle, Orientation::RELATIVE);
             controller_->get_bot().Shoot();
             for (int i = 1; i < 2 * kShootAngle; i += shootDelta) {
-                //printf("Shoot\n");
-                sleep(20);
+                sleep(10);
                 controller_->get_bot().set_angle(shootDelta, Orientation::RELATIVE);
                 controller_->get_bot().Shoot();
+                if(controller_->get_bot().get_bytecoins() == 0) {
+                    printf("fuck\n");
+                }
             }
-            //printf("End shoot\n");
             break;
         }
     }
