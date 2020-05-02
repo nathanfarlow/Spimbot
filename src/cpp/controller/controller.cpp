@@ -72,7 +72,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         if (current_pos.x < node.pos.x) {
             for (int x = current_pos.x + (diff_x / divisions); x < node.pos.x; x += diff_x / divisions) {
                 intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
-                intents_.push_back(new SpinShootIntent(this, 50));
+                intents_.push_back(new SpinShootIntent(this, 8));
                 y += diff_y / divisions;
 
             //printf("Move (%d, %d,)\n", x, y);
@@ -81,7 +81,7 @@ void Controller::Strategize(bool first_run, bool is_resuming_async) {
         } else {
             for (int x = current_pos.x + (diff_x / divisions); x > node.pos.x; x += diff_x / divisions) {
                 intents_.push_back(new LineMoveIntent(this, {x, y}, kMaxVel));
-                intents_.push_back(new SpinShootIntent(this, 50));
+                intents_.push_back(new SpinShootIntent(this, 8));
                 y += diff_y / divisions;
 
             //printf("Move (%d, %d,)\n", x, y);

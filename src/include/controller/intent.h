@@ -91,11 +91,13 @@ public:
 
 class SpinShootIntent : public Intent {
     private:
-        int divisions_;
+        int delta_;
+
+        int GetAngle(int from_x, int from_y, int to_x, int to_y);
 
     public:
-        SpinShootIntent(AbstractController *controller, int divisions)
-            : Intent(IntentType::SPIN_SHOOT, controller, false), divisions_(divisions) {}
+        SpinShootIntent(AbstractController *controller, int delta)
+            : Intent(IntentType::SPIN_SHOOT, controller, false), delta_(delta) {}
         void Start() override;
         void Stop() override;
 };

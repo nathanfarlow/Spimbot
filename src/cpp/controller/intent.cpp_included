@@ -35,26 +35,103 @@ bool LineMoveIntent::WasInterrupted() const {
         || Intent::WasInterrupted();
 }
 
+int SpinShootIntent::GetAngle(int from_x, int from_y, int to_x, int to_y) {
+    float angle = atanf((float) (to_y - from_y) / (to_x - from_x));
+    if (to_x < from_x) {
+        angle += M_PI;
+    }
+    return roundf(angle * 180 / M_PI);
+}
+
 void SpinShootIntent::Start() {
     running_ = true;
 
     int curr_angle = controller_->get_bot().get_angle();
 
-    /*OpponentHintInfo hint = controller->get_bot().get_opponent_hint();
-    int start_angle;
-    int end_angle;
-    if (hint.host_x == -1) {
-        start_angle = 0;
-        end_angle = 360;
-    } else {
+    OpponentHintInfo hint = controller_->get_bot().get_opponent_hint();
+    int start_angle = -60;
+    int end_angle = 300;
+ 
+    if (hint.host_x != -1) {
+        int hold_y_calc_x, hold_x_calc_y;
+        int wall_x, wall_y;
+        float tan_angle = tanf(hint.angle * M_PI / 180);
 
-    }*/
+        if ((hint.angle >= 0 && hint.angle < 90) || (hint.angle >= -360 && hint.angle < -270)) {
+            // Right or bottom wall
+            hold_y_calc_x = roundf((40 - hint.host_y) / tan_angle);
+            hold_x_calc_y = roundf((40 - hint.host_x) * tan_angle);
+            if (hint.host_x + hold_y_calc_x > 40) {
+                // Right wall
+                wall_x = 40;
+                wall_y = hint.host_y + hold_x_calc_y;
+            } else {
+                // Bottom wall
+                wall_x = hint.host_x + hold_y_calc_x;
+                wall_y = 40;
+            }
+        } else if ((hint.angle >= 90 && hint.angle < 180) || (hint.angle >= -270 && hint.angle < -180)) {
+            // Bottom or left wall
+            hold_y_calc_x = roundf((40 - hint.host_y) / tan_angle);
+            hold_x_calc_y = roundf(-1 * hint.host_x * tan_angle);
+            if (hint.host_x + hold_y_calc_x < 0) {
+                // Left wall
+                wall_x = 0;
+                wall_y = hint.host_y + hold_x_calc_y;
+            } else {
+                // Bottom wall
+                wall_x = hint.host_x + hold_y_calc_x;
+                wall_y = 40;
+            }
+        } else if ((hint.angle >= 180 && hint.angle < 270) || (hint.angle >= -180 && hint.angle < -90)) {
+            // Left or top wall
+            hold_y_calc_x = roundf(-1 * hint.host_y / tan_angle);
+            hold_x_calc_y = roundf(-1 * hint.host_x * tan_angle);
+            if (hint.host_x + hold_y_calc_x < 0) {
+                // Left wall
+                wall_x = 0;
+                wall_y = hint.host_y + hold_x_calc_y;
+            } else {
+                // Top wall
+                wall_x = hint.host_x + hold_y_calc_x;
+                wall_y = 0;
+            }
+        } else {
+            // Top or right wall
+            hold_y_calc_x = roundf(-1 * hint.host_y / tan_angle);
+            hold_x_calc_y = roundf((40 - hint.host_x) * tan_angle);
+            if (hint.host_x + hold_y_calc_x > 40) {
+                // Right wall
+                wall_x = 40;
+                wall_y = hint.host_y + hold_x_calc_y;
+            } else {
+                // Top wall
+                wall_x = hint.host_x + hold_y_calc_x;
+                wall_y = 0;
+            }
+        }
+        
+        //printf("Angle: %d, Wall coordinates: (%d, %d)\n", hint.angle, wall_x, wall_y);
 
-    int turn_angle = 360 / divisions_;
+        Point player_pos = controller_->get_bot().get_pos();
+        int angle_host = GetAngle(player_pos.x, player_pos.y, hint.host_x * 8, hint.host_y * 8);
+        int angle_wall = GetAngle(player_pos.x, player_pos.y, wall_x * 8, wall_y * 8);
+
+        if (angle_host < angle_wall) {
+            start_angle = angle_host;
+            end_angle = angle_wall;
+        } else {
+            start_angle = angle_wall;
+            end_angle = angle_host;
+        }
+    }
+
+    printf("Angle range: [%d, %d]\n", start_angle, end_angle);
+
     Tile scan_result; 
 
-    for (int i = 0; i < divisions_; i++) {
-        controller_->get_bot().set_angle(turn_angle, Orientation::RELATIVE);
+    for (int angle = start_angle; angle < end_angle; angle += delta_) {
+        controller_->get_bot().set_angle(angle, Orientation::ABSOLUTE);
         scan_result = controller_->get_bot().Scan().tile;
         if (scan_result.IsEnemy()) {
             controller_->get_bot().set_angle(-1 * kShootAngleStart, Orientation::RELATIVE);
