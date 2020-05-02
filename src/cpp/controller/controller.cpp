@@ -20,7 +20,6 @@ void Controller::Start() {
     Schedule(true);
 
     while(true) {
-
         while(!puzzle_manager_.HasPuzzle()) {
             puzzle_manager_.Request();
         }
@@ -34,7 +33,7 @@ void Controller::Start() {
 
 void Controller::LineMove(const Point &from, const Point &to, int velocity, int scan_len) {
 
-    const int divisions = from.DistanceTo(to) / scan_len;
+    const int divisions = from.DistanceTo(to) / scan_len - 1;
 
     if(divisions > 1) {
 
@@ -59,8 +58,6 @@ void Controller::LineMove(const Point &from, const Point &to, int velocity, int 
 void Controller::HandleRespawn() {
     //Reset our current status to the respawned base.
     //Start moving towards the nearest node in the base
-
-    if(!intents_.empty()) intents_.front()->Stop();
 
     const Point pos = bot_.get_pos();
     const Point tile_pos = PixelsToTile(pos);
@@ -183,12 +180,15 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
     }
 
     if(respawned) {
+        has_respawn_interrupt = false;
         HandleRespawn();
         return;
     } else if(bonked) {
 #ifdef DEBUG
         printf("bonk\n");
 #endif
+
+        has_bonk_interrupt = false;
 
         if(!intents_.empty()) intents_.front()->Stop();
         while(!intents_.empty()) delete intents_.pop_front();
@@ -203,7 +203,7 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
             LineMove(prev, pos, kMaxVel);
             prev = pos;
         }
-        
+
         return;
 
     } else if(timer) {
@@ -211,6 +211,7 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
     }
 
     if(intents_.empty()) {
+
         //We just arrived at our new node destination.
         current_base_ = next_base_;
         current_node_ = next_node_;
@@ -221,7 +222,6 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
         ArrayList<Host*> just_shot;
 
         bot_.set_velocity(0);
-
         //Shoot the nodes we can from here
         for(unsigned i = 0; i < node.num_targets; i++) {
             const auto tile = map.at(node.targets[i].host->tile_pos);
@@ -247,7 +247,6 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
             next_node_ = DoMod(-2 * current_direction_ + current_node_ + 1, bases_[current_base_].num_nodes);
             attacking_base_ &= bases_[current_base_].nodes[next_node_].entrance_status == NONE;
         } else {
-
             //We just finished attacking a base, now we are on an entrance node.
             attacking_base_ = true;
 
@@ -307,7 +306,6 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
                 next_node_ = current_direction_ == COUNTERCLOCKWISE ? 0 : bases_[next_base_].num_nodes - 1;
             }
 
-
         }
 
         LineMove(from, bases_[next_base_].nodes[next_node_].pos, kMaxVel);
@@ -327,22 +325,14 @@ void Controller::Schedule(bool first_run) {
         //Strategize() to remove them in case they were interrupted
         if(!intents_.empty()) {
             auto front = intents_.front();
-
-            if(front->IsExpired()) {
-                front->Stop();
-            }
+            front->Stop();
         }
 
-        bool prev_respawn_interrupt = has_respawn_interrupt;
-        bool prev_bonk_interrupt = has_bonk_interrupt;
-        bool prev_timer_interrupt = has_timer_interrupt;
-
-        has_respawn_interrupt = false;
-        has_bonk_interrupt = false;
-        has_timer_interrupt = false;
-
         //Populate the intent list
-        Strategize(first_run && first_loop, prev_timer_interrupt, prev_bonk_interrupt, prev_respawn_interrupt);
+        Strategize(first_run && first_loop, !first_run && first_loop, has_bonk_interrupt, has_respawn_interrupt);
+
+        if(has_bonk_interrupt || has_respawn_interrupt)
+            continue;
 
         first_loop = false;
 
@@ -356,30 +346,31 @@ void Controller::Schedule(bool first_run) {
                 continue;
             }
 
-            if(has_respawn_interrupt || has_bonk_interrupt || has_timer_interrupt) {
-                break;
-            }
-
             current->Start();
 
             //Schedule an interrupt and return to the puzzle solver if we can execute async
             if(current->IsAsync()) {
 
                 //Minimum cycles we can support asynchronously
-                constexpr unsigned kMinCycles = 350;
+                constexpr unsigned kMinCycles = 500;
 
                 const unsigned duration = current->get_duration();
+
+                if(has_bonk_interrupt || has_respawn_interrupt) {
+                    break;
+                }
 
                 if(duration < kMinCycles) {
                     //Just wait for it to terminate synchronously and call ourselves as if there was an interrupt
                     sleep(duration - current->get_start() + *TIMER);
+                    current->Stop();
                     continue;
                 } else {
                     //The approximate number of instructions it takes to handle the timer interrupt
                     //So we can call Stop() on the async intent as accurately as possible
-                    constexpr unsigned kNumHandlerInst = 140;
+                    constexpr unsigned kNumHandlerInst = 130;
                     *TIMER = current->get_start() + duration - kNumHandlerInst;
-                    
+
                     return;
                 }
 

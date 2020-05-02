@@ -11,9 +11,6 @@ constexpr float kCycleRatio = 10000;
 void LineMoveIntent::Start() {
     duration_ = kCycleRatio / speed_ * controller_->get_bot().get_pos().DistanceTo(to_);
 
-    controller_->get_bot().ClearBonked();
-    controller_->get_bot().ClearRespawn();
-
     controller_->get_bot().LookAt(to_);
     controller_->get_bot().set_velocity(speed_);
 

@@ -99,5 +99,4 @@ extern "C" {
 extern volatile uint8_t has_bonk_interrupt;
 extern volatile uint8_t has_request_puzzle_interrupt;
 extern volatile uint8_t has_respawn_interrupt;
-extern volatile uint8_t has_timer_interrupt;
 }

@@ -8,6 +8,7 @@
 #include "util/memory.h"
 
 void init() {
+
     //Construct interrupt mask
     uint32_t mask = BONK_INT_MASK | REQUEST_PUZZLE_INT_MASK
                         | TIMER_INT_MASK | RESPAWN_INT_MASK
