@@ -9,7 +9,7 @@
 constexpr float kCycleRatio = 10000;
 
 constexpr int kShootAngleStart = 20;
-constexpr int kShootAngleChange = 4;
+constexpr int kShootAngleChange = 2;
 
 void LineMoveIntent::Start() {
     duration_ = kCycleRatio / speed_ * controller_->get_bot().get_pos().DistanceTo(to_);
@@ -124,6 +124,9 @@ void SpinShootIntent::Start() {
             start_angle = angle_wall;
             end_angle = angle_host;
         }
+
+        start_angle -= 10;
+        end_angle += 10;
     }
 
     printf("Angle range: [%d, %d]\n", start_angle, end_angle);
