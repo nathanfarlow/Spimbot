@@ -31,6 +31,24 @@ void Controller::Start() {
 
 #define max(a, b) ((a) >= (b) ? (a) : (b))
 
+Controller::NodeResult Controller::FindNearestNode(const Point &pos) {
+    float min_dist = INFINITY;
+    NodeResult nearest = {-1, -1};
+
+    for(int i = 0; i < kNumBases; i++) {
+        const auto &base = bases_[i];
+        for(int j = 0; j < base.num_nodes; j++) {
+            const float dist = pos.DistanceTo(base.nodes[j].pos);
+            if(dist < min_dist) {
+                min_dist = dist;
+                nearest = {i, j};
+            }
+        }
+    }
+
+    return nearest;
+}
+
 void Controller::LineMove(const Point &from, const Point &to, int velocity, int scan_len) {
 
     int divisions = from.DistanceTo(to) / scan_len - 1;
@@ -133,7 +151,8 @@ void Controller::HandleRespawn() {
 
     //Interpolate movement according to angle the node shoots the host
 
-    constexpr int kMaxAngleOff = 4;
+    //TODO: increase if getting bonks
+    constexpr int kMaxAngleOff = 5;
 
     const int sw = kTileSize * kNumTiles;
 
@@ -204,12 +223,31 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
         if(!intents_.empty()) intents_.front()->Stop();
         while(!intents_.empty()) delete intents_.pop_front();
 
+        auto nearest = FindNearestNode(bot_.get_pos());
+        next_base_ = nearest.base;
+        next_node_ = nearest.node;
+
         AStar pathfinder(map);
-        auto result = pathfinder.FindPath({bot_.get_pos().x, bot_.get_pos().y}, bases_[next_base_].nodes[next_node_].pos);
+        auto result = pathfinder.FindPath(bot_.get_pos(), bases_[next_base_].nodes[next_node_].pos);
 
         while(!result.empty()) {
             auto pos = result.pop_front();
             intents_.push_back(new LineMoveIntent(this, pos, kMaxVel));
+        }
+
+        const auto &min_node = bases_[next_base_].nodes[next_node_];
+
+        if(min_node.entrance_status == NONE) {
+            attacking_base_ = true;
+
+            if(ScoreForBase(next_base_, false) > 0) {
+                current_direction_ = next_node_ < bases_[next_base_].num_nodes / 2 ? COUNTERCLOCKWISE : CLOCKWISE;
+            } else {
+                current_direction_ = next_node_ > bases_[next_base_].num_nodes / 2 ? COUNTERCLOCKWISE : CLOCKWISE;
+            }
+        } else {
+            current_direction_ = bot_.get_pos().x < kNumTiles * kTileSize / 2 ? min_node.entrance_status : 1 - min_node.entrance_status;
+            attacking_base_ = false;
         }
 
         has_bonk_interrupt = false;
