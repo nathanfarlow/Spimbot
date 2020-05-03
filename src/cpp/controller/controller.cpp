@@ -23,10 +23,10 @@ void Controller::Start() {
         while(!puzzle_manager_.HasPuzzle()) {
             puzzle_manager_.Request();
         }
-        
+
         puzzle_manager_.Solve();
     }
-    
+
 }
 
 #define max(a, b) ((a) >= (b) ? (a) : (b))
@@ -167,6 +167,11 @@ int Controller::ScoreForBase(int base, bool include_player) {
 
     return score;
 }
+//
+//extern "C" {
+//extern volatile uint8_t handler_available;
+//extern volatile uint8_t has_timer_interrupt;
+//}
 
 //Populate the intent list
 void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respawned) {
@@ -187,34 +192,32 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
     }
 
     if(respawned) {
-        has_respawn_interrupt = false;
         HandleRespawn();
-        return;
-    } else if(bonked) {
+        has_respawn_interrupt = false;
+    }
+
+    if(bonked) {
 #ifdef DEBUG
         printf("bonk\n");
 #endif
 
-        has_bonk_interrupt = false;
-
         if(!intents_.empty()) intents_.front()->Stop();
         while(!intents_.empty()) delete intents_.pop_front();
 
-        //We are fucked without pathfinding. Unfortunately, this takes a long time and can lose us the game.
-
         AStar pathfinder(map);
-        auto result = pathfinder.FindPath(bot_.get_pos(), bases_[next_base_].nodes[next_node_].pos);
-        Point prev = bot_.get_pos();
+        auto result = pathfinder.FindPath({bot_.get_pos().x, bot_.get_pos().y}, bases_[next_base_].nodes[next_node_].pos);
+
         while(!result.empty()) {
             auto pos = result.pop_front();
-            LineMove(prev, pos, kMaxVel);
-            prev = pos;
+            intents_.push_back(new LineMoveIntent(this, pos, kMaxVel));
         }
 
-        return;
+        has_bonk_interrupt = false;
+    }
 
-    } else if(timer) {
+    if(timer) {
         delete intents_.pop_front();
+        //has_timer_interrupt = false;
     }
 
     if(intents_.empty()) {
@@ -327,7 +330,7 @@ This is where the strategizing happens. We update our bot
 and then when we return, the puzzle continues to solve_given
 */
 void Controller::Schedule(bool first_run) {
-
+    //handler_available = false;
     bool first_loop = true;
     while(true) {
 
@@ -356,13 +359,17 @@ void Controller::Schedule(bool first_run) {
                 continue;
             }
 
-            if(has_bonk_interrupt || has_respawn_interrupt)
+            if(has_bonk_interrupt || has_respawn_interrupt) {
                 Schedule(false);
+                return;
+            }
 
             current->Start();
 
-            if(has_bonk_interrupt || has_respawn_interrupt)
+            if(has_bonk_interrupt || has_respawn_interrupt) {
                 Schedule(false);
+                return;
+            }
 
             //Schedule an interrupt and return to the puzzle solver if we can execute async
             if(current->IsAsync()) {
@@ -374,24 +381,29 @@ void Controller::Schedule(bool first_run) {
 
                 if(has_bonk_interrupt || has_respawn_interrupt) {
                     Schedule(false);
+                    return;
                 }
 
                 if(duration < kMinCycles) {
                     //Just wait for it to terminate synchronously and call ourselves as if there was an interrupt
-                    sleep(duration - current->get_start() + *TIMER);
+                    sleep(duration);
                     current->Stop();
-                    continue;
+                    //has_timer_interrupt = true;
+                    //handler_available = true;
+                    Schedule(false);
+
+                    return;
                 } else {
                     //The approximate number of instructions it takes to handle the timer interrupt
                     //So we can call Stop() on the async intent as accurately as possible
-                    constexpr unsigned kNumHandlerInst = 150;
-                    *TIMER = current->get_start() + duration - kNumHandlerInst;
+                    constexpr int kNumHandlerInst = 135;
+                    *TIMER += (int)((int)duration - kNumHandlerInst);
 
                     if(has_bonk_interrupt || has_respawn_interrupt) {
                         *TIMER = INT_MAX;
                         Schedule(false);
                     }
-
+                    //handler_available = true;
                     return;
                 }
 
@@ -419,7 +431,7 @@ void Controller::OnSolve() {
               && bot_.get_bytecoins() >= ((WaitForBytecoinsIntent*)front)->get_min_bytecoins()) {
             //Relay the fact that the puzzle was solved before the
             //async event expired
-            front->Interrupt();  
+            front->Interrupt();
 
             //Cancel intent's async timer and simulate a timer interrupt
             //without going through the handler, wasting cycles
