@@ -82,6 +82,12 @@ private:
     void Strategize(bool first_run, bool timer, bool bonked, bool respawned);
     void Schedule(bool first_run);
 
+    struct NodeResult {
+        int base, node;
+    };
+
+    NodeResult FindNearestNode(const Point &pos);
+
     int current_base_, current_node_;
     int next_base_, next_node_;
     int current_direction_;
