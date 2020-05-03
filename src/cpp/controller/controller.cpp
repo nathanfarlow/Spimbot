@@ -152,15 +152,16 @@ void Controller::HandleRespawn() {
     //Interpolate movement according to angle the node shoots the host
 
     //TODO: increase if getting bonks
-    constexpr int kMaxAngleOff = 5;
+    constexpr int kMaxAngleOff = 3;
+    constexpr int kRadiusOff = 3;
 
     const int sw = kTileSize * kNumTiles;
 
     bool should_offset_counterclockwise = (pos.x < sw / 2 && pos.x > min_node.pos.x) || (pos.x > sw / 2 && pos.x < min_node.pos.x);
     const int angle_off = -2 * kMaxAngleOff * should_offset_counterclockwise + kMaxAngleOff;
 
-    const int x = min_node.pos.x + roundf(min_distance * cosf((angle + angle_off) * M_PI / 180));
-    const int y = min_node.pos.y + roundf(min_distance * sinf((angle + angle_off) * M_PI / 180));
+    const int x = min_node.pos.x + roundf((min_distance + kRadiusOff) * cosf((angle + angle_off) * M_PI / 180));
+    const int y = min_node.pos.y + roundf((min_distance + kRadiusOff) * sinf((angle + angle_off) * M_PI / 180));
 
     LineMove(pos, {x, y}, kMaxVel);
     LineMove({x, y}, min_node.pos, kMaxVel);
@@ -197,7 +198,7 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
     const auto map = bot_.get_map();
 
     if(first_run) {
-        current_direction_ = entropy_ % 2;
+        current_direction_ = (entropy_ + 1) % 2;
 
         current_base_ = next_base_ = bot_.get_pos().x > 100 ? SOUTHEAST : NORTHWEST;
         current_node_ = next_node_ = 1;
@@ -213,13 +214,13 @@ void Controller::Strategize(bool first_run, bool timer, bool bonked, bool respaw
     if(respawned) {
         HandleRespawn();
         has_respawn_interrupt = false;
+        return;
     }
 
     if(bonked) {
 #ifdef DEBUG
-        printf("bonk\n");
+        printf("bonk :(\n");
 #endif
-
         if(!intents_.empty()) intents_.front()->Stop();
         while(!intents_.empty()) delete intents_.pop_front();
 
@@ -376,7 +377,8 @@ void Controller::Schedule(bool first_run) {
         //Strategize() to remove them in case they were interrupted
         if(!intents_.empty()) {
             auto front = intents_.front();
-            front->Stop();
+            if(front->IsExpired())
+                front->Stop();
         }
 
         //Populate the intent list
@@ -413,7 +415,7 @@ void Controller::Schedule(bool first_run) {
             if(current->IsAsync()) {
 
                 //Minimum cycles we can support asynchronously
-                constexpr unsigned kMinCycles = 500;
+                constexpr unsigned kMinCycles = 3000;
 
                 const unsigned duration = current->get_duration();
 
@@ -424,7 +426,7 @@ void Controller::Schedule(bool first_run) {
 
                 if(duration < kMinCycles) {
                     //Just wait for it to terminate synchronously and call ourselves as if there was an interrupt
-                    sleep(duration);
+                    sleep(duration - current->get_start() + *TIMER);
                     current->Stop();
                     //has_timer_interrupt = true;
                     //handler_available = true;
@@ -434,8 +436,8 @@ void Controller::Schedule(bool first_run) {
                 } else {
                     //The approximate number of instructions it takes to handle the timer interrupt
                     //So we can call Stop() on the async intent as accurately as possible
-                    constexpr int kNumHandlerInst = 135;
-                    *TIMER += (int)((int)duration - kNumHandlerInst);
+                    constexpr unsigned kNumHandlerInst = 110;
+                    *TIMER = current->get_start() + duration - kNumHandlerInst;
 
                     if(has_bonk_interrupt || has_respawn_interrupt) {
                         *TIMER = INT_MAX;
