@@ -156,11 +156,13 @@ void ScanIntent::Start() {
             if(dist > 16 * kTileSize)
                 continue;
 
-            controller_->get_bot().set_angle(-1 * kShootAngle, Orientation::RELATIVE);
+            int shoot_angle = controller_->get_bot().get_angle();
             controller_->get_bot().Shoot();
-            for (int i = 1; i < 2 * kShootAngle; i += shootDelta) {
+    
+            for (int i = 1; i < 2 * kShootAngle / shootDelta; i++) {
                 sleep(10);
-                controller_->get_bot().set_angle(shootDelta, Orientation::RELATIVE);
+                int multiplier = (i % 2 == 1) ? i : -1 * i;
+                controller_->get_bot().set_angle(multiplier * shootDelta, Orientation::RELATIVE);
                 controller_->get_bot().Shoot();
             }
 
