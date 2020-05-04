@@ -1,35 +1,64 @@
 Strategy:
 
+Leading up to the competition, Nathan created cspim, a toolchain for developing spim supported
+applications in C/C++/Obj-C. It consists of a slightly modified version of llvm, a python transpiler,
+and a modified libc implementation. Using this, we were able to program our strategy completely in 
+C/C++ with only a couple of core utilities in mips.
+
+Initially, we did not realize the spim arena had guaranteed paths, so we used an A* pathfinder
+(with a min heap!) to compute our path to the next host. This proved way too slow. Then we experimented
+with creating a graph such that each node was connected to another node by an edge iff a straight line
+could be drawn from one to another. Then we would modify the A* algorithm to pathfind on that. However,
+we ultimately decided to just hardcode all the nodes connected in a cyclical path around the arena and
+eliminated pathfinding altogether. Boring. As for our puzzle solver, we tried both BFS and the linear
+algebra reduction  method. Both proved slower than the provided solver. How is that possible?
+The linear algebra method is in polynomial time! Alas, the size of our input was too small for that to be
+beneficial. The solution is to use caches, and we experimented with a log(m) solution for mxn puzzles, but
+found that the sub-puzzles it reduced to could be unsolvable. Our final strategy is as follows:
+
 Our bot follows a hardcoded path to move around the map and shoot hosts. The hardcoded straight
 lines the bot moves in are broken up between scanning and moving. While scanning, we get a hint for
 the opponent's location and scan starting from the host towards the point where the line from the
-host following the opponent's angle meets the wall. By scanning in large bursts like this our bot
+host following the opponent's angle meets the wall (at worst 180 degrees). By scanning in large bursts like this our bot
 nearly always scans the opponent when there is a direct line of sight from our bot to the opponent's. 
 Then the bot shoots several UDP packets at different angles in an attempt to hit the opponent, even
 while the opponent is moving. Much of our strategy relies on the super-fast puzzle solving algorithm
 we came up with, easily netting us thousands of bytecoins. The puzzle solving algorithm first reduces
 the puzzle using chasing lights algorithm to the last row and then uses lookup tables to find the
-precomputed solution. With the huge amount of bytecoins we had, we could afford to
-continously scan and shoot UDP packets at the enemy bot in large bursts.
+precomputed solution. This is O(mn) and takes about 2000 cycles on average for an estimated 35x-40x speedup.
+With the huge amount of bytecoins we had, we could afford to continuously scan and shoot UDP packets at the
+enemy bot in large bursts.
 
 Problems we encountered:
 
-We encountered several bugs while writing the strategy, including arithmatic overflows, invalid
+We encountered several bugs while writing the strategy, including arithmetic overflows, invalid
 stack reads, and troubles hardcoding the path (including unforseen bonks when the hardcoded path
-should have had none). We utilized syscalls to print variable values to help in debugging. The
+should have had none). We utilized printf to print variable values to help in debugging. The
 source of many of our hardcoding woes were slightly off values that needed to be changed. The
 biggest bug we had was caused by not correctly handling an interrupt that occurred while we were
 handling another interrupt. After we corrected that behavior, many of our previous bugs were
-reduced.
+reduced. Towards the end of the project, values and code were changed randomly just to try to get the
+thing to not bonk and not crash but to say we were burnt out is an understatement. Rip code aesthetics D:
+
+Note on that last issue from Nathan: the bot would randomly crash every 6 games or so. When running with the
+same seeds, we could reproduce the crash. However, making any change to the code, even one cycle,
+would stop the crash from occurring. Even DEBUGGING the code would stop the crash from occurring. It
+was a nightmare that almost caused me to lose my sanity. I spent 8 HOURS debugging it. That is quite possibly
+the most time ever in my life. The root cause was when our interrupt handler interrupted itself, if it interrupted
+on exactly ONE specific instruction, the return address would get corrupted. To make our interrupt handler
+self interruptible, we used the stack pointer to save the eret address. But when loading from the stack pointer
+into a kernel register, then into the coprocessor register before the actual eret, we could get interrupted,
+and the eret overwritten to the current location, the original lost forever. Then weird things would happen.
+We fixed this by using jr for when our interrupt handler was handling an interrupt but was interruptible itself.
 
 Contributions:
 
 Nathan - Implemented the hardcoded path, fixed tons of bugs, implemented an A* pathfinding
-algorithm, implemented lookup table puzzle solving, created the interface through which we wrote the
-code to interact with Spimbot.
+algorithm and other ADT, implemented lookup table puzzle solving, created the interface through which we wrote
+the code to interact with Spimbot.
 
 Birkhoff - Researched better puzzle solving techniques and implemented them, such as a Breadth-First
-solution, tested the strategy for bugs and bonks.
+solution and the first part of the chase lights algorithm, tested the strategy for bugs and bonks.
 
 Jeffrey - Came up with the final hardcoded path, wrote the code for scanning for the enemy and
 shooting it and analyzing the opponent hint, and wrote code to test the speed and collect data on
