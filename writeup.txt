@@ -7,8 +7,9 @@ host following the opponent's angle meets the wall. By scanning in large bursts 
 nearly always scans the opponent when there is a direct line of sight from our bot to the opponent's. 
 Then the bot shoots several UDP packets at different angles in an attempt to hit the opponent, even
 while the opponent is moving. Much of our strategy relies on the super-fast puzzle solving algorithm
-we came up with, easily netting us thousands of bytecoins. The puzzle solving algorithm utilized
-lookup tables to achieve this. With the huge amount of bytecoins we had, we could afford to
+we came up with, easily netting us thousands of bytecoins. The puzzle solving algorithm first reduces
+the puzzle using chasing lights algorithm to the last row and then uses lookup tables to find the
+precomputed solution. With the huge amount of bytecoins we had, we could afford to
 continously scan and shoot UDP packets at the enemy bot in large bursts.
 
 Problems we encountered:
